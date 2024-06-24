@@ -3,18 +3,18 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 
+export const pool =  mysql.createPool({
+  host: process.env.VITE_DB_HOST,
+  port: process.env.VITE_DB_PORT,
+  user: process.env.VITE_DB_USER,
+  password: process.env.VITE_DB_PASSWORD,
+  database: process.env.VITE_DB_NAME,
+});
 
 async function connectToDatabase() {
 
     try {
-
-      const pool =  mysql.createPool({
-        host: process.env.VITE_DB_HOST,
-        port: process.env.VITE_DB_PORT,
-        user: process.env.VITE_DB_USER,
-        password: process.env.VITE_DB_PASSWORD,
-        database: process.env.VITE_DB_NAME,
-      });
+      
       // console.log("host:", process.env.VITE_DB_HOST);
       const connection = await pool.getConnection();
       
@@ -25,5 +25,5 @@ async function connectToDatabase() {
       console.error('Error connecting to MySQL database:', err.message);
     }
   }
-  
+
 export default connectToDatabase;
