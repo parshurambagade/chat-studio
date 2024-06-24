@@ -5,8 +5,6 @@ import {
   View,
   Text,
   TextInput,
-  Button,
-  StyleSheet,
   Alert,
   Pressable,
   KeyboardAvoidingView,
@@ -36,32 +34,32 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView className="flex flex-1 justify-center p-6">
       <KeyboardAvoidingView>
         <View>
-          <Text style={styles.title}>Login</Text>
+          <Text className="text-center text-2xl mb-8">Login</Text>
           <TextInput
-            style={styles.input}
+            className="border-none border-b border-gray-300 pb-2 mb-6 mt-2 px-2"
             placeholder="Email"
             keyboardType="email-address"
             onChangeText={(text) => setEmail(text)}
             value={email}
           />
           <TextInput
-            style={styles.input}
+            className="border-none border-b border-gray-300 pb-2 mb-6 mt-2 px-2"
             placeholder="Password"
             secureTextEntry
             onChangeText={(text) => setPassword(text)}
             value={password}
           />
-          <Pressable onPress={handleLogin} style={styles.button}>
-            <Text style={{ color: "white", textAlign: "center" }}>
+          <Pressable onPress={handleLogin} className="bg-blue-900 px-4 py-3 rounded-lg shadow-md">
+            <Text className="text-white text-center">
               Login
             </Text>
           </Pressable>
 
           <Pressable
-            style={styles.signupLink}
+            className="justify-center items-center mt-8"
             onPress={() => navigation.navigate("Register")}
           >
             <Text>New here? Create account!</Text>
@@ -71,40 +69,5 @@ const LoginScreen = ({ navigation }) => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    padding: 16,
-  },
-  title: {
-    fontSize: 24,
-    marginBottom: 24,
-    textAlign: "center",
-  },
-  input: {
-    height: 40,
-    borderBottomWidth: 1,
-    borderBottomColor: "#c0c5c5",
-    marginBottom: 28,
-    paddingBottom: 6,
-    paddingHorizontal: 8,
-    borderRadius: 6,
-  },
-
-  button: {
-    borderRadius: 6,
-    padding: 14,
-    backgroundColor: "#2C549F",
-  },
-
-  signupLink: {
-    marginTop: 20,
-    // flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});
 
 export default LoginScreen;

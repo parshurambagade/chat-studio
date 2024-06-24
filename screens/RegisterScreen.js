@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  StyleSheet,
-  Button,
   Pressable,
   SafeAreaView,
   KeyboardAvoidingView,
@@ -45,43 +43,43 @@ const RegisterScreen = ({ navigation }) => {
   };
 }
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView className="flex flex-1 justify-center p-6">
       <KeyboardAvoidingView>
         <View>
-          <Text style={styles.title}>Register</Text>
+          <Text className="text-center text-2xl mb-8">Register</Text>
           <View>
-          <Pressable style={styles.proileImgContainer}>
+          <Pressable className="justify-center items-center mt-4 mb-8" >
             <Image
-              style={styles.profileImg}
+              className="w-24 h-24 rounded-full"
               source={{
                 uri: image ? image : DEFAULT_IMAGE_URL,
               }}
             />
-            <Text style={{backgroundColor: "black",textAlign: "center", color: "gray", marginTop: 4, fontSize: 12}}>Add</Text>
+            {/* <Text style={{backgroundColor: "black",textAlign: "center", color: "gray", marginTop: 4, fontSize: 12}}>Add</Text> */}
           </Pressable>
           </View>
 
           <TextInput
-            style={styles.input}
+           className="border-none border-b border-gray-300 pb-2 mb-6 mt-2 px-2"
             placeholder="Username"
             onChangeText={(text) => setUsername(text)}
             value={username}
           />
           <TextInput
-            style={styles.input}
+            className="border-none border-b border-gray-300 pb-2 mb-6 mt-2 px-2"
             placeholder="Profile picture"
             onChangeText={(text) => setImage(text)}
             value={image}
           />
           <TextInput
-            style={styles.input}
+             className="border-none border-b border-gray-300 pb-2 mb-6 mt-2 px-2"
             placeholder="Email"
             keyboardType="email-address"
             onChangeText={(text) => setEmail(text)}
             value={email}
           />
           <TextInput
-            style={styles.input}
+             className="border-none border-b border-gray-300 pb-2 mb-6 mt-2 px-2"
             placeholder="Password"
             secureTextEntry
             onChangeText={(text) => setPassword(text)}
@@ -89,12 +87,11 @@ const RegisterScreen = ({ navigation }) => {
           />
           <Pressable
             onPress={handleRegister}
-            style={styles.button}
-          >
-            <Text style={{color:"white", textAlign: "center"}}>Register</Text></Pressable>
+            className="bg-blue-900 px-4 py-3 rounded-lg shadow-md">
+            <Text className="text-white text-center">Register</Text></Pressable>
 
           <Pressable
-            style={styles.signupLink}
+            className="justify-center items-center mt-8"
             onPress={() => navigation.navigate("Login")}
           >
             <Text>Already have account? login here!</Text>
@@ -105,52 +102,6 @@ const RegisterScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    padding: 16,
-  },
-  title: {
-    fontSize: 24,
-    marginBottom: 24,
-    textAlign: "center",
-  },
-  proileImgContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 24,
-    marginBottom: 48,
-    padding:4,
-  },
-  profileImg: {
-    height: 50,
-    width: 50,
-    borderRadius: 25,
-  },
-  input: {
-    height: 40,
-    borderBottomWidth: 1,
-    borderBottomColor: "#c0c5c5",
-    marginBottom: 28,
-    paddingBottom: 6,
-    paddingHorizontal: 8,
-    borderRadius: 6,
-  },
 
-  button: {
-    borderRadius: 6,
-    padding:14,
-    backgroundColor: '#2C549F',
-  },
-
-  signupLink: {
-    marginTop: 20,
-    // flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});
 
 export default RegisterScreen;
