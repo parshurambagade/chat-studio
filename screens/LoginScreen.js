@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
@@ -10,11 +10,21 @@ import {
   KeyboardAvoidingView,
   SafeAreaView,
 } from "react-native";
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { authContext } from "../context/authContext";
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const {token, setToken} = useContext(authContext);
 
+
+  useEffect(() => {
+    if(token){
+      navigation.replace("MainStack", {screen: "Main"}  )
+    }
+  }, [token, navigation])
+ 
   const handleLogin = async () => {
     try{
       if(email && password){
@@ -22,7 +32,8 @@ const LoginScreen = ({ navigation }) => {
           email: email,
           password: password,
         });
-        await AsyncStorage.setItem("token", response?.data?.token);
+        const token = await AsyncStorage.setItem("authToken", response?.data?.token);
+        setToken(token);
         Alert.alert("Login successful!");
       setEmail("");
       setPassword("");
@@ -65,6 +76,7 @@ const LoginScreen = ({ navigation }) => {
             <Text>New here? Create account!</Text>
           </Pressable>
         </View>
+
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

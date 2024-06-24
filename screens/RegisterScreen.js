@@ -30,7 +30,7 @@ const RegisterScreen = ({ navigation }) => {
         image: image
       });
       // console.log(`token: ${JSON.stringify(response.data) }`);
-      await AsyncStorage.setItem("token", response?.data?.token);
+      await AsyncStorage.setItem("authToken", response?.data?.token);
       Alert.alert("Account created!");
       setUsername("");
       setEmail("");
@@ -48,15 +48,15 @@ const RegisterScreen = ({ navigation }) => {
         <View>
           <Text className="text-center text-2xl mb-8">Register</Text>
           <View>
-          <Pressable className="justify-center items-center mt-4 mb-8" >
+          <View className="justify-center items-center mt-4 mb-8" >
             <Image
               className="w-24 h-24 rounded-full"
               source={{
-                uri: image ? image : DEFAULT_IMAGE_URL,
+                uri: `${image ? image : DEFAULT_IMAGE_URL}`,
               }}
             />
             {/* <Text style={{backgroundColor: "black",textAlign: "center", color: "gray", marginTop: 4, fontSize: 12}}>Add</Text> */}
-          </Pressable>
+          </View>
           </View>
 
           <TextInput

@@ -20,15 +20,19 @@ app.post("/register", async (req, res) => {
     const { username, email, password, image } = req.body;
 
     // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // const hashedPassword = await bcrypt.hash(password, 10);
     bcrypt.genSalt(10, function (err, salt) {
       bcrypt.hash(password, salt, async function (err, hash) {
         await pool.query(
           "INSERT INTO User  (username, email, password, image) VALUES (?, ?, ?, ?)",
-          [username, email, hashedPassword, image]
+          [username, email, hash, image]
         );
-
-        const token = jwt.sign({ email: email }, process.env.VITE_JWT_SECRET, {
+        
+        const user = await pool.query(
+          "SELECT * FROM User WHERE email= ?", email
+        );
+        console.log(user);
+        const token = jwt.sign({ userId: user[0][0].id }, process.env.VITE_JWT_SECRET, {
           expiresIn: "1h",
         });
         //  console.log(token);
@@ -66,7 +70,7 @@ app.post("/login", async (req, res) => {
       }
 
       // Generate JWT token
-      const token = jwt.sign({ email: email }, process.env.VITE_JWT_SECRET, {
+      const token = jwt.sign({ userId: user[0][0].id }, process.env.VITE_JWT_SECRET, {
         expiresIn: "1h",
       });
 
