@@ -1,28 +1,28 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { jwtDecode } from "jwt-decode";
 import { createContext, useEffect, useState } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { jwtDecode } from "jwt-decode";
 
 const authContext = createContext();
 
 const AuthContextProvider = ({ children }) => {
-  const [token, setToken] = useState("");
-  const [userId, setUserId] = useState("");
+  const [token, setToken] = useState(''); 
+  const [userId, setUserId] = useState(''); 
 
   useEffect(() => {
-    const fetchUser = async () => {
-        try{
-            const token = AsyncStorage.getItem("authToken");
-            const decodedToken = jwtDecode(JSON.stringify(token));
-            console.log(`decoded token: ${decodedToken}`);
-            const userId = decodedToken.id;
-            setUserId(userId);
-        }catch(e){
-            console.error(e.message);
-        }
-    };
-
     fetchUser();
-  }, [userId]);
+  }, []);
+
+  const fetchUser = async () => {
+    try {
+      const storedToken = await AsyncStorage.getItem("authToken");
+      const storedUserId = await AsyncStorage.getItem("userId");
+        setToken(storedToken);
+        console.log(`Stored UserId from authcontext: ${storedUserId}`);
+        setUserId(storedUserId);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+    }
+  };
 
   return (
     <authContext.Provider value={{ token, setToken, userId, setUserId }}>
@@ -31,5 +31,4 @@ const AuthContextProvider = ({ children }) => {
   );
 };
 
-
-export {authContext, AuthContextProvider};
+export { authContext, AuthContextProvider };

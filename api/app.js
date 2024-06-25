@@ -27,14 +27,19 @@ app.post("/register", async (req, res) => {
           "INSERT INTO User  (username, email, password, image) VALUES (?, ?, ?, ?)",
           [username, email, hash, image]
         );
-        
+
         const user = await pool.query(
-          "SELECT * FROM User WHERE email= ?", email
+          "SELECT * FROM User WHERE email= ?",
+          email
         );
         console.log(user);
-        const token = jwt.sign({ userId: user[0][0].id }, process.env.VITE_JWT_SECRET, {
-          expiresIn: "1h",
-        });
+        const token = jwt.sign(
+          { userId: user[0][0].id },
+          process.env.VITE_JWT_SECRET,
+          {
+            expiresIn: "1h",
+          }
+        );
         //  console.log(token);
 
         res
@@ -54,7 +59,7 @@ app.post("/login", async (req, res) => {
 
     // Check if user exists in database
     const user = await pool.query("SELECT * FROM User WHERE email = ?", [
-      email
+      email,
     ]);
 
     // console.log("hash password:", user[0][0].password);
@@ -70,16 +75,37 @@ app.post("/login", async (req, res) => {
       }
 
       // Generate JWT token
-      const token = jwt.sign({ userId: user[0][0].id }, process.env.VITE_JWT_SECRET, {
-        expiresIn: "1h",
-      });
-
+      const token = jwt.sign(
+        { userId: user[0][0].id },
+        process.env.VITE_JWT_SECRET,
+        {
+          expiresIn: "1h",
+        }
+      );
+      console.log(`Token from login controller: ${token}`);
       // Send the token back to the client (mobile app)
       res.json({ message: "Login successful!", token });
     });
   } catch (e) {
     console.error("Error during login:", e);
     res.status(500).json({ error: "Login failed" });
+  }
+});
+
+app.get('/users/:userId', async (req, res) => {
+  const {userId} = req.params;
+  console.log("userid: ", userId);
+  // if (!userId) {
+  //   return res.status(400).send("userId is required");
+  // }
+
+  try {
+    const result = await pool.query("SELECT username, email, id FROM User WHERE id NOT IN (?)", [userId]);
+    console.log(`Result rows: ${JSON.stringify(result[0])}`);
+    res.json(result[0]); // Send only the rows from the query result
+  } catch (err) {
+    console.error(err);
+    res.status(500).send(err.message); // Send a more specific error message
   }
 });
 

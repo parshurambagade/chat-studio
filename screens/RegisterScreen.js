@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -12,12 +12,22 @@ import { TextInput } from "react-native-gesture-handler";
 import { DEFAULT_IMAGE_URL } from "../constants";
 import axios from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authContext } from "../context/authContext";
+import { jwtDecode } from "jwt-decode";
 
 const RegisterScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [image, setImage] = useState("");
+
+  const {token, setToken, setUserId} = useContext(authContext);
+
+  useEffect(() => {
+    if(token){
+      navigation.replace("MainStack", {screen: "Main"}  )
+    }
+  }, [token, navigation])
 
   const handleRegister =  async () => {
     try{
@@ -30,7 +40,13 @@ const RegisterScreen = ({ navigation }) => {
         image: image
       });
       // console.log(`token: ${JSON.stringify(response.data) }`);
-      await AsyncStorage.setItem("authToken", response?.data?.token);
+      const token = response?.data?.token;
+      const storedToken = await AsyncStorage.setItem("authToken", JSON.stringify(token));
+      const {userId} = jwtDecode(token)
+      const storedUserId = await AsyncStorage.setItem("userId", JSON.stringify(userId));
+
+      setUserId(storedUserId);
+      setToken(storedToken);
       Alert.alert("Account created!");
       setUsername("");
       setEmail("");

@@ -12,18 +12,43 @@ import {
 } from "react-native";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { authContext } from "../context/authContext";
+import { jwtDecode } from "jwt-decode";
+import { useNavigation } from "@react-navigation/native";
 
-const LoginScreen = ({ navigation }) => {
+const LoginScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const {token, setToken} = useContext(authContext);
+  const {token, setToken, userId, setUserId} = useContext(authContext);
 
+  const navigation = useNavigation();
+  // const [storedToken, setStoredToken] = useState(null);
+
+  const fetchUser = async () => {
+    // const storedToken = await AsyncStorage.getItem("authToken");
+    // setStoredToken(storedToken);
+    // if(storedToken){
+    //   const {userId} = jwtDecode(JSON.stringify(storedToken));
+    //   const storedUserId = await AsyncStorage.setItem("userId", JSON.stringify(userId));
+    //   setToken(storedToken);
+    //   setUserId(storedUserId);
+    //   navigation.replace('MainStack', {screen: 'Main'}  )
+    // }
+    if(token) {
+      navigation.navigate('MainStack', {screen: 'Main'});
+    }
+    }
 
   useEffect(() => {
-    if(token){
-      navigation.replace("MainStack", {screen: "Main"}  )
-    }
+    fetchUser();
   }, [token, navigation])
+
+  useEffect(() => {
+    console.log(`Token in LoginScreen: ${token}`);
+  },[token]);
+
+  useEffect(() => {
+    console.log(`UserId in LoginScreen: ${userId}`);
+  },[userId]);
  
   const handleLogin = async () => {
     try{
@@ -32,15 +57,30 @@ const LoginScreen = ({ navigation }) => {
           email: email,
           password: password,
         });
-        const token = await AsyncStorage.setItem("authToken", response?.data?.token);
-        setToken(token);
+        console.log(`Response in handleLogin: ${JSON.stringify(response.data)}`);
+        const token = response?.data?.token;
+
+        //setting authToken and update in context
+        await AsyncStorage.setItem("authToken", token.toString());
+        const storedToken = await AsyncStorage.getItem("authToken");
+        setToken(storedToken);
+        // console.log(`Token from handleLogin: ${token}`);
+
+        const {userId} = jwtDecode(token);
+        // console.log("Login userId decoded:", userId.toString());
+        await AsyncStorage.setItem("userId", userId.toString());
+        const storedUserId = await AsyncStorage.getItem("userId");
+        setUserId(storedUserId);
+        // console.log("stored userId:", storedUserId);
+
+  
         Alert.alert("Login successful!");
       setEmail("");
       setPassword("");
       
       }
     }catch(e){
-      console.error(e?.message);
+      console.error(e);
     }
   };
 
