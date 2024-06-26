@@ -9,6 +9,7 @@ import ProfileScreen from "../screens/ProfileScreen";
 import PeopleScreen from "../screens/PeopleScreen";
 import { useContext } from "react";
 import { authContext } from "../context/authContext";
+import ChatRoom from "../screens/ChatRoom";
 
 
 export const StackNavigator = () => {
@@ -90,6 +91,7 @@ export const StackNavigator = () => {
           component={PeopleScreen}
           options={{ headerShown: false }}
         />
+        <Stack.Screen name="ChatRoom" component={ChatRoom} />
       </Stack.Navigator>
     );
   };

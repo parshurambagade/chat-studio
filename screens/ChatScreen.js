@@ -1,9 +1,9 @@
 import { Alert, Image, Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
 import React, { useContext, useEffect } from "react";
 import { authContext } from "../context/authContext";
-import { Feather } from "@expo/vector-icons";
+import { Feather, FontAwesome6 } from "@expo/vector-icons";
 import { SimpleLineIcons } from "@expo/vector-icons";
-import { FontAwesome6 } from '@expo/vector-icons';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import PeopleContainer from "../components/PeopleContainer";
 

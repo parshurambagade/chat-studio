@@ -4,6 +4,7 @@ import { DEFAULT_IMAGE_URL } from "../constants";
 import { authContext } from "../context/authContext";
 import axios from "axios";
 import { FlatList, ScrollView } from "react-native-gesture-handler";
+import { useNavigation } from "@react-navigation/native";
 
 export default function UsersFlatListContainer() {
   const [users, setUsers] = useState();
@@ -46,12 +47,10 @@ export default function UsersFlatListContainer() {
 }
 
 const UserFlatListRow = ({ user }) => {
-  // useEffect(() => {
-  //   console.log(`User from UserFlatListRow ${user}`);
-  // }, []);
+  const navigation = useNavigation();
   if(!user) return;
 
-  const { email, username, image } = user;
+  const { email, username, image, id} = user;
  
 
   return (
@@ -70,7 +69,12 @@ const UserFlatListRow = ({ user }) => {
         </View>
       </View>
       <View>
-        <Pressable className="bg-blue-900 px-4 py-2 text-white rounded-md">
+        <Pressable onPress={() =>
+        navigation.navigate('ChatRoom', {
+          name: username,
+          receiverId: id,
+          image: image,
+        })} className="bg-blue-900 px-4 py-2 text-white rounded-md">
           <Text className="text-white">Chat</Text>
         </Pressable>
       </View>

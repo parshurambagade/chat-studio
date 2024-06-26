@@ -4,10 +4,14 @@ import mysql from "mysql";
 import jwt from "jsonwebtoken";
 import connection, { pool } from "./db.js";
 import bcrypt from "bcrypt";
+import http from 'http';
+import { Server } from 'socket.io';
 
 const app = express();
 const PORT = 5000;
 connection();
+
+const userSocketMap = {};
 
 app.use(cors());
 app.use(express.urlencoded({ extended: true })); // For URL-encoded bodies
@@ -19,8 +23,6 @@ app.post("/register", async (req, res) => {
   try {
     const { username, email, password, image } = req.body;
 
-    // Hash the password
-    // const hashedPassword = await bcrypt.hash(password, 10);
     bcrypt.genSalt(10, function (err, salt) {
       bcrypt.hash(password, salt, async function (err, hash) {
         await pool.query(
@@ -40,7 +42,6 @@ app.post("/register", async (req, res) => {
             expiresIn: "1h",
           }
         );
-        //  console.log(token);
 
         res
           .status(201)
@@ -57,24 +58,19 @@ app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check if user exists in database
     const user = await pool.query("SELECT * FROM User WHERE email = ?", [
       email,
     ]);
-
-    // console.log("hash password:", user[0][0].password);
 
     if (user.length === 0) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    // Validate password
     bcrypt.compare(password, user[0][0].password, function (err, result) {
       if (!result) {
         return res.status(401).json({ error: "Invalid email or password" });
       }
 
-      // Generate JWT token
       const token = jwt.sign(
         { userId: user[0][0].id },
         process.env.VITE_JWT_SECRET,
@@ -83,7 +79,6 @@ app.post("/login", async (req, res) => {
         }
       );
       console.log(`Token from login controller: ${token}`);
-      // Send the token back to the client (mobile app)
       res.json({ message: "Login successful!", token });
     });
   } catch (e) {
@@ -93,20 +88,115 @@ app.post("/login", async (req, res) => {
 });
 
 app.get('/users/:userId', async (req, res) => {
-  const {userId} = req.params;
+  const { userId } = req.params;
   console.log("userid: ", userId);
-  // if (!userId) {
-  //   return res.status(400).send("userId is required");
-  // }
 
   try {
     const result = await pool.query("SELECT username, email, id FROM User WHERE id NOT IN (?)", [userId]);
     console.log(`Result rows: ${JSON.stringify(result[0])}`);
-    res.json(result[0]); // Send only the rows from the query result
+    res.json(result[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).send(err.message); // Send a more specific error message
+    res.status(500).send(err.message);
   }
 });
 
-app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+// Create HTTP server
+const server = http.createServer(app);
+
+// Initialize Socket.io with the server
+const io = new Server(server);
+
+io.on('connection', (socket) => {
+  const { userId } = socket.handshake.query;
+
+  if (!userId) {
+    console.log('Connection attempt without userId');
+    return;
+  }
+
+  // Add user and socket ID to the map
+  userSocketMap[userId] = socket.id;
+  console.log(`User ${userId} connected with socket ID ${socket.id}`);
+
+  // Handle user disconnection
+  socket.on('disconnect', () => {
+    delete userSocketMap[userId];
+    console.log(`User ${userId} disconnected`);
+  });
+});
+
+app.post('/sendMessage', async (req, res) => {
+  try {
+    const { senderId, receiverId, message } = req.body;
+
+    console.log(`Receiver Id : ${receiverId}`);
+
+    const newMessage = await pool.query(
+      "INSERT INTO Message (sender_id, receiver_id, message) VALUES (?, ?, ?)",
+      [senderId, receiverId, message]
+    );
+
+    const messageId = newMessage.insertId;
+
+    const insertedMessage = await pool.query(
+      "SELECT * FROM Message WHERE id = ?",
+      [messageId]
+    );
+
+    if (!insertedMessage.length) {
+      return res.status(500).json({ error: "Failed to retrieve sent message" });
+    }
+
+    console.log('userSocketMap:', userSocketMap); // Log the entire userSocketMap for debugging
+
+    const receiverSocketId = userSocketMap[receiverId];
+
+    if (receiverSocketId) {
+      console.log('Emitting receiveMessage event to the receiver', receiverId);
+      io.to(receiverSocketId).emit('newMessage', insertedMessage[0]);
+    } else {
+      console.log('Receiver socket ID not found');
+    }
+
+    res.status(201).json(insertedMessage[0]);
+  } catch (error) {
+    console.error('ERROR', error);
+    res.status(500).json({ error: "Failed to send message" });
+  }
+});
+
+app.get('/messages', async (req, res) => {
+  try {
+    const { senderId, receiverId } = req.query;
+
+    let query = "SELECT * FROM Message WHERE ";
+    const queryParams = [];
+
+    if (senderId) {
+      queryParams.push(senderId);
+      query += "sender_id = ?";
+    }
+
+    if (receiverId) {
+      if (senderId) {
+        query += " OR ";
+      }
+      queryParams.push(receiverId);
+      query += "receiver_id = ?";
+    }
+
+    if (!queryParams.length) {
+      return res.status(400).json({ error: "Missing senderId or receiverId" });
+    }
+
+    const messages = await pool.query(query, queryParams);
+    console.log(`Messages from /messages endpoint: ${messages}`);
+    res.status(200).json(messages);
+  } catch (error) {
+    console.error('Error', error);
+    res.status(500).json({ error: "Failed to retrieve messages" });
+  }
+});
+
+server.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
