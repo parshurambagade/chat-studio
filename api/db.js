@@ -1,9 +1,7 @@
-import mysql from 'mysql2/promise'; 
-import dotenv from 'dotenv';
-dotenv.config();
+const mysql = require('mysql2/promise'); 
+const dotenv = require('dotenv').config(); 
 
-
-export const pool =  mysql.createPool({
+const pool =  mysql.createPool({
   host: process.env.VITE_DB_HOST,
   port: process.env.VITE_DB_PORT,
   user: process.env.VITE_DB_USER,
@@ -26,4 +24,4 @@ async function connectToDatabase() {
     }
   }
 
-export default connectToDatabase;
+module.exports = { pool, connectToDatabase};

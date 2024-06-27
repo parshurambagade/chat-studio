@@ -14,6 +14,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { authContext } from "../context/authContext";
 import { jwtDecode } from "jwt-decode";
 import { useNavigation } from "@react-navigation/native";
+import { API_ENDPOINT } from "../constants";
 
 const LoginScreen = () => {
   const [email, setEmail] = useState("");
@@ -21,18 +22,8 @@ const LoginScreen = () => {
   const {token, setToken, userId, setUserId} = useContext(authContext);
 
   const navigation = useNavigation();
-  // const [storedToken, setStoredToken] = useState(null);
 
   const fetchUser = async () => {
-    // const storedToken = await AsyncStorage.getItem("authToken");
-    // setStoredToken(storedToken);
-    // if(storedToken){
-    //   const {userId} = jwtDecode(JSON.stringify(storedToken));
-    //   const storedUserId = await AsyncStorage.setItem("userId", JSON.stringify(userId));
-    //   setToken(storedToken);
-    //   setUserId(storedUserId);
-    //   navigation.replace('MainStack', {screen: 'Main'}  )
-    // }
     if(token) {
       navigation.navigate('MainStack', {screen: 'Main'});
     }
@@ -42,22 +33,22 @@ const LoginScreen = () => {
     fetchUser();
   }, [token, navigation])
 
-  useEffect(() => {
-    console.log(`Token in LoginScreen: ${token}`);
-  },[token]);
+  // useEffect(() => {
+  //   console.log(`Token in LoginScreen: ${token}`);
+  // },[token]);
 
-  useEffect(() => {
-    console.log(`UserId in LoginScreen: ${userId}`);
-  },[userId]);
+  // useEffect(() => {
+  //   console.log(`UserId in LoginScreen: ${userId}`);
+  // },[userId]);
  
   const handleLogin = async () => {
     try{
       if(email && password){
-        const response = await axios.post("http://192.168.1.13:5000/login", {
+        const response = await axios.post(`${API_ENDPOINT}/login`, {
           email: email,
           password: password,
         });
-        console.log(`Response in handleLogin: ${JSON.stringify(response.data)}`);
+        // console.log(`Response in handleLogin: ${JSON.stringify(response.data)}`);
         const token = response?.data?.token;
 
         //setting authToken and update in context

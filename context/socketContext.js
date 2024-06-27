@@ -15,11 +15,12 @@ export const SocketContextProvider = ({ children }) => {
   useEffect(() => {
     if (authUser) {
       console.log(`Connecting socket for user: ${userId}`);
-      const socket = io('http://192.168.1.13:3000', {
+      const socket = io('http://192.168.1.13:3000', { // Update the port if needed
         query: {
           userId: userId,
         },
       });
+      
 
       setSocket(socket);
 

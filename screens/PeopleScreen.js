@@ -7,10 +7,10 @@ export default function PeopleScreen() {
   const { userId, token } = useContext(authContext);
   // State to store fetched users
 
-  useEffect(() => {
-    console.log(`UserId from PeopleScreen useEffect: ${userId}`);
-    console.log(`Token from PeopleScreen useEffect: ${token}`);
-  }, []);
+  // useEffect(() => {
+  //   console.log(`UserId from PeopleScreen useEffect: ${userId}`);
+  //   console.log(`Token from PeopleScreen useEffect: ${token}`);
+  // }, []);
 
   return (
     <View className="mx-4">

@@ -9,7 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { TextInput } from "react-native-gesture-handler";
-import { DEFAULT_IMAGE_URL } from "../constants";
+import { API_ENDPOINT, DEFAULT_IMAGE_URL } from "../constants";
 import axios from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authContext } from "../context/authContext";
@@ -33,13 +33,16 @@ const RegisterScreen = ({ navigation }) => {
     try{
     // Place your Register logic here
     if (email && password && username && image) {
-      const response = await axios.post("http://192.168.1.13:5000/register", {
+
+      const response = await axios.post(`${API_ENDPOINT}/register`, {
         username: username,
         password: password,
         email: email,
         image: image
       });
-      // console.log(`token: ${JSON.stringify(response.data) }`);
+
+     
+      console.log(`Response: ${response.data}`);
       const token = response?.data?.token;
       const storedToken = await AsyncStorage.setItem("authToken", JSON.stringify(token));
       const {userId} = jwtDecode(token)
@@ -55,7 +58,7 @@ const RegisterScreen = ({ navigation }) => {
       
     } 
   }catch(e){
-    console.error(e?.message);
+    console.error(e);
   };
 }
   return (
