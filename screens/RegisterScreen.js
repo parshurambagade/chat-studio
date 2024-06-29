@@ -44,12 +44,19 @@ const RegisterScreen = ({ navigation }) => {
      
       console.log(`Response: ${response.data}`);
       const token = response?.data?.token;
-      const storedToken = await AsyncStorage.setItem("authToken", JSON.stringify(token));
+
+      await AsyncStorage.setItem("authToken", token.toString());
+      const storedToken = await AsyncStorage.getItem("authToken");
+
+      setToken(storedToken);
+
       const {userId} = jwtDecode(token)
-      const storedUserId = await AsyncStorage.setItem("userId", JSON.stringify(userId));
+
+      await AsyncStorage.setItem("userId",userId.toString());
+      const storedUserId = await AsyncStorage.getItem("userId");
 
       setUserId(storedUserId);
-      setToken(storedToken);
+   
       Alert.alert("Account created!");
       setUsername("");
       setEmail("");
