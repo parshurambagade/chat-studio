@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import io from 'socket.io-client';
 import { authContext } from './authContext';
+import { SOCKET_CONNECTION_ENDPOINT } from '@env';
 
 const SocketContext = createContext();
 
@@ -15,7 +16,7 @@ export const SocketContextProvider = ({ children }) => {
   useEffect(() => {
     if (authUser) {
       console.log(`Connecting socket for user: ${userId}`);
-      const socket = io('http://192.168.1.13:3000', { // Update the port if needed
+      const socket = io(`${SOCKET_CONNECTION_ENDPOINT}/`, { // Update the port if needed
         query: {
           userId: userId,
         },

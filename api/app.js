@@ -5,7 +5,6 @@ const jwt = require("jsonwebtoken");
 const { pool, connectToDatabase } = require("./db.js");
 const bcrypt = require("bcrypt");
 
-
 const app = express();
 const PORT = 5000;
 
@@ -16,10 +15,10 @@ app.use(express.urlencoded({ extended: true })); // For URL-encoded bodies
 app.use(express.json()); // For JSON bodies
 
 async function isEmailRegistered(email) {
-  const query = 'SELECT COUNT(*) AS count FROM User WHERE email = ?';
+  const query = "SELECT COUNT(*) AS count FROM User WHERE email = ?";
   const [rows] = await pool.query(query, [email]);
   return rows[0].count > 0;
-} 
+}
 
 app.get("/", (req, res) => res.json("hello"));
 
@@ -34,8 +33,6 @@ app.post("/register", async (req, res) => {
       return res.status(400).json({ message: "Email is already registered" });
     }
 
-   
-    
     // console.log(`Registered Emails: ${JSON.stringify(registerdEmails[0])}`);
 
     bcrypt.genSalt(10, function (err, salt) {
@@ -55,10 +52,9 @@ app.post("/register", async (req, res) => {
           [username, email, hash, image]
         );
 
-        const [user] = await pool.query(
-          "SELECT * FROM User WHERE email= ?",
-          [email]
-        );
+        const [user] = await pool.query("SELECT * FROM User WHERE email= ?", [
+          email,
+        ]);
         console.log(user);
         const token = jwt.sign(
           { userId: user[0].id },
@@ -118,20 +114,89 @@ app.post("/login", async (req, res) => {
 });
 
 app.get("/users/:userId", async (req, res) => {
-  const { userId } = req.params;
-  // console.log("userid: ", userId);
-
   try {
+    console.log("req received!");
+    const { userId } = req.params;
+    console.log("userid: ", userId);
+
     const [result] = await pool.query(
       "SELECT username, email, id FROM User WHERE id NOT IN (?)",
       [userId]
     );
-    // console.log(`Result rows: ${JSON.stringify(result)}`);
+    console.log(`Result rows: ${JSON.stringify(result)}`);
     res.json(result);
   } catch (err) {
     console.error(err);
     res.status(500).send(err.message);
   }
+});
+
+
+
+app.get("/messages", async (req, res) => {
+  try {
+    const { senderId, receiverId } = req.query;
+
+    if (!senderId || !receiverId) {
+      return res.status(400).json({ error: "Missing senderId or receiverId" });
+    }
+
+    // Modify query to ensure both sender_id and receiver_id match
+    const query = `
+      SELECT * FROM Message
+      WHERE (sender_id = ? AND receiver_id = ?)
+      OR (sender_id = ? AND receiver_id = ?)
+    `;
+    const queryParams = [senderId, receiverId, receiverId, senderId];
+
+    const [messages] = await pool.query(query, queryParams);
+    console.log(`Messages from /messages endpoint: ${messages}`);
+    res.status(200).json(messages);
+  } catch (error) {
+    console.error("Error", error);
+    res.status(500).json({ error: "Failed to retrieve messages" });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
+const http = require("http").createServer(app);
+const io = require("socket.io")(http);
+const userSocketMap = {};
+
+io.on("connection", (socket) => {
+  console.log(`User is connected to the socket: ${socket.id}`);
+
+  const userId = socket.handshake.query.userId;
+
+  console.log(`UserId in the socket: ${userId}`);
+
+  if (userId !== "undefined") userSocketMap[userId] = socket.id;
+
+  console.log(`Socket data: ${JSON.stringify(userSocketMap)}`);
+
+  socket.on("disconnect", () => {
+    console.log(`User disconnected from the socket: ${userId}`);
+    delete userSocketMap[userId];
+  });
+
+  socket.on("sendMessage", ({ senderId, receiverId, message }) => {
+    console.log(`ReceiverId in the socket.on(sendMessage): ${receiverId}`);
+    const receiverSocketId = userSocketMap[receiverId];
+    console.log(`Receiver Id from the socket: ${receiverId}`);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("receiveMessage", {
+        senderId,
+        message,
+      });
+    }
+
+  });
+  socket.on('hello', ({message}) => {
+    console.log(message);
+  })
 });
 
 app.post("/sendMessage", async (req, res) => {
@@ -141,7 +206,6 @@ app.post("/sendMessage", async (req, res) => {
     // console.log(`Sender Id : ${senderId}`);
     // console.log(`Receiver Id : ${receiverId}`);
     // console.log(`Message : ${message}`);
-
 
     const [newMessage] = await pool.query(
       "INSERT INTO Message (sender_id, receiver_id, message) VALUES (?, ?, ?)",
@@ -178,68 +242,5 @@ app.post("/sendMessage", async (req, res) => {
     res.status(500).json({ error: "Failed to send message" });
   }
 });
-
-app.get("/messages", async (req, res) => {
-  try {
-    const { senderId, receiverId } = req.query;
-
-    if (!senderId || !receiverId) {
-      return res.status(400).json({ error: "Missing senderId or receiverId" });
-    }
-
-    // Modify query to ensure both sender_id and receiver_id match
-    const query = `
-      SELECT * FROM Message
-      WHERE (sender_id = ? AND receiver_id = ?)
-      OR (sender_id = ? AND receiver_id = ?)
-    `;
-    const queryParams = [senderId, receiverId, receiverId, senderId];
-
-    const [messages] = await pool.query(query, queryParams);
-    console.log(`Messages from /messages endpoint: ${messages}`);
-    res.status(200).json(messages);
-  } catch (error) {
-    console.error("Error", error);
-    res.status(500).json({ error: "Failed to retrieve messages" });
-  }
-});
-
-
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
-
-const http = require('http').createServer(app);
-const io =  require('socket.io')(http);
-const userSocketMap = {};
-
-io.on('connection', socket => {
-  console.log(`User is connected to the socket: ${socket.id}`);
-
-  const userId = socket.handshake.query.userId;
-
-  console.log(`UserId in the socket: ${userId}`);
-
-  if(userId !== 'undefined') userSocketMap[userId] = socket.id;
-
-  console.log(`Socket data: ${JSON.stringify(userSocketMap)}`);
-
-  socket.on('disconnect', () => {
-    console.log(`User disconnected from the socket: ${userId}`);
-    delete userSocketMap[userId];
-  });
-
-  socket.on('sendMessage', ({senderId, receiverId, message}) => {
-    const receiverSocketId = userSocketMap[receiverId];
-    console.log(`Receiver Id from the socket: ${receiverId}`)
-    if(receiverSocketId){
-      io.to(receiverSocketId).emit('receiveMessage', {
-        senderId,
-        message
-      });
-    };
-
-  })
-})
 
 http.listen(3000, () => console.log(`Socket is connected to the port: 3000`));

@@ -14,7 +14,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { authContext } from "../context/authContext";
 import { jwtDecode } from "jwt-decode";
 import { useNavigation } from "@react-navigation/native";
-import { API_ENDPOINT } from "../constants";
+import { API_ENDPOINT } from "@env";
 
 const LoginScreen = () => {
   const [email, setEmail] = useState("");

@@ -9,11 +9,12 @@ import {
   Alert,
 } from "react-native";
 import { TextInput } from "react-native-gesture-handler";
-import { API_ENDPOINT, DEFAULT_IMAGE_URL } from "../constants";
+import {  DEFAULT_IMAGE_URL } from "../constants";
 import axios from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authContext } from "../context/authContext";
 import { jwtDecode } from "jwt-decode";
+import {API_ENDPOINT} from '@env';
 
 const RegisterScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");

@@ -1,10 +1,11 @@
 import { Image, Pressable, Text, View } from "react-native";
 import React, { useContext, useEffect, useState } from "react";
-import { API_ENDPOINT, DEFAULT_IMAGE_URL } from "../constants";
+import { DEFAULT_IMAGE_URL } from "../constants";
 import { authContext } from "../context/authContext";
 import axios from "axios";
 import { FlatList, ScrollView } from "react-native-gesture-handler";
 import { useNavigation } from "@react-navigation/native";
+import {API_ENDPOINT} from '@env';
 
 export default function UsersFlatListContainer() {
   const [users, setUsers] = useState([]);
@@ -12,10 +13,15 @@ export default function UsersFlatListContainer() {
 
   const fetchUsers = async () => {
     try {
-      if (!userId) return;
+      
+    if (!userId) return;
+
+    const api = `${API_ENDPOINT}/users/${userId}`;
+    console.log(api);   
       const response = await axios.get(
         `${API_ENDPOINT}/users/${userId}`
       );
+   
       setUsers(response.data);
     } catch (error) {
       console.error("Error fetching users:", error);

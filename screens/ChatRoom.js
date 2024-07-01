@@ -14,7 +14,7 @@ import { Entypo, Ionicons } from '@expo/vector-icons';
 import { Feather } from '@expo/vector-icons';
 import axios from 'axios';
 import {useSocketContext} from '../context/socketContext';
-import { API_ENDPOINT } from '../constants';
+import { API_ENDPOINT } from '@env';
 
 const ChatRoom = ({navigation}) => {
   const [message, setMessage] = useState('');
@@ -73,13 +73,18 @@ const ChatRoom = ({navigation}) => {
 
   const sendMessage = async (senderId, receiverId) => {
     try {
+      if(!senderId || !receiverId) return;
+            
       await axios.post(`${API_ENDPOINT}/sendMessage`, {
         senderId,
         receiverId,
         message,
       });
 
+      console.log("Receiver Id from sendMessage", receiverId)
       socket.emit('sendMessage', {senderId, receiverId, message});
+      socket.emit('hello', {message: "hello"});
+
       setMessage('');
 
       setTimeout(() => {
