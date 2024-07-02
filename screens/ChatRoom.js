@@ -1,7 +1,6 @@
 import {
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -9,7 +8,7 @@ import {
 } from "react-native";
 import React, { useContext, useEffect, useLayoutEffect, useState } from "react";
 import { authContext } from "../context/authContext";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useRoute } from "@react-navigation/native";
 import { Entypo, Ionicons, Feather, FontAwesome6 } from "@expo/vector-icons";
 import axios from "axios";
 import { useSocketContext } from "../context/socketContext";
@@ -18,7 +17,8 @@ import { API_ENDPOINT } from "@env";
 const ChatRoom = ({ navigation }) => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
-  const { token, userId, setToken, setUserId } = useContext(authContext);
+  const [deliveredMessages, setDeliveredMessages] = useState([]);
+  const { userId } = useContext(authContext);
   const { socket } = useSocketContext();
   const route = useRoute();
 
@@ -26,7 +26,10 @@ const ChatRoom = ({ navigation }) => {
     navigation.setOptions({
       headerTitle: "",
       headerLeft: () => (
-        <Pressable onPress={() => navigation.goBack()} className="flex-row items-center gap-2.5">
+        <Pressable
+          onPress={() => navigation.goBack()}
+          className="flex-row items-center gap-2.5"
+        >
           <Ionicons name="arrow-back" size={24} color="black" />
           <View>
             <Text>{route?.params?.name}</Text>
@@ -37,6 +40,16 @@ const ChatRoom = ({ navigation }) => {
   }, [navigation, route?.params?.name]);
 
   useEffect(() => {
+    console.log("Emmiting messages-seen");
+    if (!deliveredMessages.length) {
+      console.log("deliveredMessages is empty!");
+      return;
+    }
+
+    socket.emit("messages-seen", { data: deliveredMessages });
+  }, [deliveredMessages]);
+
+  useEffect(() => {
     const fetchMessages = async () => {
       try {
         const senderId = userId;
@@ -45,24 +58,38 @@ const ChatRoom = ({ navigation }) => {
           params: { senderId, receiverId },
         });
 
-        socket?.emit('messages-seen', {data: response.data});
-        
-        setMessages(response.data.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)));
+        const fetchedMessages = response.data.sort(
+          (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+        );
+        setMessages(fetchedMessages);
 
+        // Only emit messages-seen if the current user is the receiver
+        if (
+          fetchedMessages.some(
+            (msg) => msg.receiver_id == userId && msg.status == "delivered"
+          )
+        ) {
+          const result = fetchedMessages.filter(
+            (msg) => msg.receiver_id == userId && msg.status == "delivered"
+          );
+          console.log("Delivered Messages:", result);
+          setDeliveredMessages(result);
+        }
       } catch (error) {
         console.error("Error", error);
       }
     };
 
     fetchMessages();
-  }, [route?.params?.receiverId]);
+  }, [route?.params?.receiverId, userId, socket]);
 
   useEffect(() => {
     const handleNewMessage = (newMessage) => {
-      setMessages((prevMessages) => 
-        [...prevMessages, newMessage].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+      setMessages((prevMessages) =>
+        [...prevMessages, newMessage].sort(
+          (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+        )
       );
-      
     };
 
     if (socket) {
@@ -78,11 +105,10 @@ const ChatRoom = ({ navigation }) => {
 
   useEffect(() => {
     const handleMessagesSeen = (updatedMessages) => {
+      console.log("Handling messages-seen event");
       setMessages((prevMessages) =>
         prevMessages.map((msg) =>
-          updatedMessages.some((updatedMsg) => updatedMsg.id == msg.id)
-            ? { ...msg, status: "seen" }
-            : msg
+          updatedMessages.includes(msg.id) ? { ...msg, status: "seen" } : msg
         )
       );
     };
@@ -110,10 +136,11 @@ const ChatRoom = ({ navigation }) => {
         status: "sent",
       };
 
-      setMessages((prevMessages) => 
-        [...prevMessages, newMessage].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+      setMessages((prevMessages) =>
+        [...prevMessages, newMessage].sort(
+          (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+        )
       );
-      
 
       socket.emit("sendMessage", { senderId, receiverId, message });
 
@@ -171,7 +198,7 @@ const ChatRoom = ({ navigation }) => {
                     </Text>
                   ) : (
                     <Text className="text-right text-[9px] text-gray-400 mt-1">
-                      <FontAwesome6 name="check-double" color="blue" />
+                      <FontAwesome6 name="check-double" color="blue" size={9} />
                     </Text>
                   ))}
               </View>
