@@ -206,18 +206,22 @@ io.on("connection", (socket) => {
   });
 
   socket.on("messages-received", async ({ data }) => {
-    const sentMessages = data.filter((message) => message.status === "sent").map((message) => message.id);
-
+    console.log(`Messages received: ${JSON.stringify(data)}`);
+    const sentMessages = data.filter((message) => message.status == "sent").map((message) => message.id);
+  
     if (sentMessages.length === 0) return;
-
+  
     const query = "UPDATE Message SET status = 'delivered' WHERE id IN (?)";
-
+  
     try {
+      
       await pool.query(query, [sentMessages]);
+      
     } catch (error) {
       console.error(`Error updating message status: ${error.message}`);
     }
   });
+  
 
   socket.on("messages-seen", async ({ data }) => {
     const seenMessages = data.filter((message) => message.status === "delivered").map((message) => message.id);

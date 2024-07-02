@@ -13,20 +13,23 @@ import { useSocketContext } from "../context/socketContext";
 
 export default function ChatScreen({navigation}) {
   const { setUserId, token, setToken, userId } = useContext(authContext);
-  const { setMessages} = useContext(userContext);
+  const { setMessages, messages} = useContext(userContext);
   const {socket} = useSocketContext();
   useEffect(() => {
     fetchUserMessages();
   }, [userId])
 
+  useEffect(() => {
+    // Emit an event to update the message status to 'delivered'
+    socket?.emit('messages-received', { data: messages });
+  },[messages])
+
   const fetchUserMessages = async () => {
     try {
-      // const storedUserId = await AsyncStorage.getItem("userId") || null;
       if (!userId) return;
-        const response = await axios.get(`${API_ENDPOINT}/userMessages/${userId}`);
-        // console.log(`Response from fetchUserMessages: ${JSON.stringify(response.data)}`);
-        setMessages(response.data);
-        socket?.emit('messages-received', {data: response.data});
+      const response = await axios.get(`${API_ENDPOINT}/userMessages/${userId}`);
+      setMessages(response.data);
+      
     } catch (error) {
       console.error("Error fetching messages:", error);
     }

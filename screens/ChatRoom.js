@@ -80,7 +80,7 @@ const ChatRoom = ({ navigation }) => {
     const handleMessagesSeen = (updatedMessages) => {
       setMessages((prevMessages) =>
         prevMessages.map((msg) =>
-          updatedMessages.some((updatedMsg) => updatedMsg.id === msg.id)
+          updatedMessages.some((updatedMsg) => updatedMsg.id == msg.id)
             ? { ...msg, status: "seen" }
             : msg
         )
