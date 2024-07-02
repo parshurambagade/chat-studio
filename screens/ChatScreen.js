@@ -6,14 +6,31 @@ import { SimpleLineIcons } from "@expo/vector-icons";
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import PeopleContainer from "../components/PeopleContainer";
+import axios from "axios";
+import { API_ENDPOINT } from '@env';
+import { userContext } from "../context/userContext";
+import { useSocketContext } from "../context/socketContext";
 
 export default function ChatScreen({navigation}) {
   const { setUserId, token, setToken, userId } = useContext(authContext);
+  const { setMessages} = useContext(userContext);
+  const {socket} = useSocketContext();
+  useEffect(() => {
+    fetchUserMessages();
+  }, [userId])
 
-  // useEffect(() => {
-  //   console.log(`UserId from ChatScreen useEffect: ${userId}`);
-  //   console.log(`Token from ChatScreen useEffect: ${token}`);
-  // }, [])
+  const fetchUserMessages = async () => {
+    try {
+      // const storedUserId = await AsyncStorage.getItem("userId") || null;
+      if (!userId) return;
+        const response = await axios.get(`${API_ENDPOINT}/userMessages/${userId}`);
+        // console.log(`Response from fetchUserMessages: ${JSON.stringify(response.data)}`);
+        setMessages(response.data);
+        socket?.emit('messages-received', {data: response.data});
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+    }
+  };
 
     const handleLogout = async () => {
         try{

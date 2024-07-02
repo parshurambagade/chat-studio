@@ -4,9 +4,12 @@ const mysql = require("mysql");
 const jwt = require("jsonwebtoken");
 const { pool, connectToDatabase } = require("./db.js");
 const bcrypt = require("bcrypt");
+const http = require("http");
+const socketIo = require("socket.io");
+require('dotenv').config();
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 connectToDatabase();
 
@@ -25,50 +28,26 @@ app.get("/", (req, res) => res.json("hello"));
 app.post("/register", async (req, res) => {
   try {
     const { username, email, password, image } = req.body;
-
     const emailExists = await isEmailRegistered(email);
 
     if (emailExists) {
-      // console.error("Email already exists!");
       return res.status(400).json({ message: "Email is already registered" });
     }
 
-    // console.log(`Registered Emails: ${JSON.stringify(registerdEmails[0])}`);
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(password, salt);
 
-    bcrypt.genSalt(10, function (err, salt) {
-      if (err) {
-        console.error("Error generating salt:", err);
-        return res.status(500).json({ error: "Registration failed" });
-      }
+    await pool.query(
+      "INSERT INTO User (username, email, password, image) VALUES (?, ?, ?, ?)",
+      [username, email, hash, image]
+    );
 
-      bcrypt.hash(password, salt, async function (err, hash) {
-        if (err) {
-          console.error("Error hashing password:", err);
-          return res.status(500).json({ error: "Registration failed" });
-        }
-
-        await pool.query(
-          "INSERT INTO User (username, email, password, image) VALUES (?, ?, ?, ?)",
-          [username, email, hash, image]
-        );
-
-        const [user] = await pool.query("SELECT * FROM User WHERE email= ?", [
-          email,
-        ]);
-        console.log(user);
-        const token = jwt.sign(
-          { userId: user[0].id },
-          process.env.VITE_JWT_SECRET,
-          {
-            expiresIn: "1h",
-          }
-        );
-
-        res
-          .status(201)
-          .json({ message: "User registered successfully!", token });
-      });
+    const [user] = await pool.query("SELECT * FROM User WHERE email = ?", [email]);
+    const token = jwt.sign({ userId: user[0].id }, process.env.VITE_JWT_SECRET, {
+      expiresIn: "1h",
     });
+
+    res.status(201).json({ message: "User registered successfully!", token });
   } catch (e) {
     console.error("Error during registration:", e);
     res.status(500).json({ error: "Registration failed" });
@@ -78,35 +57,22 @@ app.post("/register", async (req, res) => {
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    const [user] = await pool.query("SELECT * FROM User WHERE email = ?", [
-      email,
-    ]);
+    const [user] = await pool.query("SELECT * FROM User WHERE email = ?", [email]);
 
     if (user.length === 0) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    bcrypt.compare(password, user[0].password, function (err, result) {
-      if (err) {
-        console.error("Error comparing passwords:", err);
-        return res.status(500).json({ error: "Login failed" });
-      }
+    const result = await bcrypt.compare(password, user[0].password);
+    if (!result) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
 
-      if (!result) {
-        return res.status(401).json({ error: "Invalid email or password" });
-      }
-
-      const token = jwt.sign(
-        { userId: user[0].id },
-        process.env.VITE_JWT_SECRET,
-        {
-          expiresIn: "1h",
-        }
-      );
-      console.log(`Token from login controller: ${token}`);
-      res.json({ message: "Login successful!", token });
+    const token = jwt.sign({ userId: user[0].id }, process.env.VITE_JWT_SECRET, {
+      expiresIn: "1h",
     });
+
+    res.json({ message: "Login successful!", token });
   } catch (e) {
     console.error("Error during login:", e);
     res.status(500).json({ error: "Login failed" });
@@ -115,15 +81,11 @@ app.post("/login", async (req, res) => {
 
 app.get("/users/:userId", async (req, res) => {
   try {
-    console.log("req received!");
     const { userId } = req.params;
-    console.log("userid: ", userId);
-
     const [result] = await pool.query(
       "SELECT username, email, id FROM User WHERE id NOT IN (?)",
       [userId]
     );
-    console.log(`Result rows: ${JSON.stringify(result)}`);
     res.json(result);
   } catch (err) {
     console.error(err);
@@ -131,7 +93,45 @@ app.get("/users/:userId", async (req, res) => {
   }
 });
 
+app.get("/userInfo/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    if (!userId.length) {
+      return res.status(400).json({ error: "Missing userId" });
+    }
 
+    const query = "SELECT id, username, email, image FROM User WHERE id = ?";
+    const [response] = await pool.query(query, [userId]);
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error("Error", error);
+    res.status(500).json({ error: "Failed to retrieve user" });
+  }
+});
+
+app.get("/userMessages/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ error: "Missing userId" });
+    }
+
+    const query = `
+      SELECT * FROM Message
+      WHERE (sender_id = ? OR receiver_id = ?)
+    `;
+    const queryParams = [userId, userId];
+
+    const [messages] = await pool.query(query, queryParams);
+
+    res.status(200).json(messages);
+  } catch (error) {
+    console.error("Error", error);
+    res.status(500).json({ error: "Failed to retrieve messages" });
+  }
+});
 
 app.get("/messages", async (req, res) => {
   try {
@@ -141,7 +141,6 @@ app.get("/messages", async (req, res) => {
       return res.status(400).json({ error: "Missing senderId or receiverId" });
     }
 
-    // Modify query to ensure both sender_id and receiver_id match
     const query = `
       SELECT * FROM Message
       WHERE (sender_id = ? AND receiver_id = ?)
@@ -150,7 +149,6 @@ app.get("/messages", async (req, res) => {
     const queryParams = [senderId, receiverId, receiverId, senderId];
 
     const [messages] = await pool.query(query, queryParams);
-    console.log(`Messages from /messages endpoint: ${messages}`);
     res.status(200).json(messages);
   } catch (error) {
     console.error("Error", error);
@@ -158,89 +156,87 @@ app.get("/messages", async (req, res) => {
   }
 });
 
+const server = http.createServer(app);
+const io = socketIo(server);
+const userSocketMap = {};
+
+io.on("connection", (socket) => {
+  const userId = socket.handshake.query.userId;
+  if (userId !== "undefined") userSocketMap[userId] = socket.id;
+
+  socket.on("disconnect", () => {
+    delete userSocketMap[userId];
+  });
+
+  socket.on("sendMessage", async ({ senderId, receiverId, message }) => {
+    try {
+      // Insert the new message directly into the database
+      const [newMessage] = await pool.query(
+        "INSERT INTO Message (sender_id, receiver_id, message) VALUES (?, ?, ?)",
+        [senderId, receiverId, message]
+      );
+
+      const messageId = newMessage.insertId;
+
+      const [insertedMessage] = await pool.query(
+        "SELECT * FROM Message WHERE id = ?",
+        [messageId]
+      );
+
+      if (!insertedMessage.length) {
+        console.error("Failed to retrieve sent message");
+        return;
+      }
+
+      const receiverSocketId = userSocketMap[receiverId];
+
+      if (receiverSocketId) {
+        io.to(receiverSocketId).emit("newMessage", insertedMessage[0]);
+      }
+
+      // Also emit the new message back to the sender to update their state
+      const senderSocketId = userSocketMap[senderId];
+      if (senderSocketId) {
+        io.to(senderSocketId).emit("newMessage", insertedMessage[0]);
+      }
+
+    } catch (error) {
+      console.error("ERROR", error);
+    }
+  });
+
+  socket.on("messages-received", async ({ data }) => {
+    const sentMessages = data.filter((message) => message.status === "sent").map((message) => message.id);
+
+    if (sentMessages.length === 0) return;
+
+    const query = "UPDATE Message SET status = 'delivered' WHERE id IN (?)";
+
+    try {
+      await pool.query(query, [sentMessages]);
+    } catch (error) {
+      console.error(`Error updating message status: ${error.message}`);
+    }
+  });
+
+  socket.on("messages-seen", async ({ data }) => {
+    const seenMessages = data.filter((message) => message.status === "delivered").map((message) => message.id);
+
+    if (seenMessages.length === 0) return;
+
+    const query = "UPDATE Message SET status = 'seen' WHERE id IN (?)";
+
+    try {
+      await pool.query(query, [seenMessages]);
+    } catch (error) {
+      console.error(`Error updating message status: ${error.message}`);
+    }
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
-const http = require("http").createServer(app);
-const io = require("socket.io")(http);
-const userSocketMap = {};
-
-io.on("connection", (socket) => {
-  console.log(`User is connected to the socket: ${socket.id}`);
-
-  const userId = socket.handshake.query.userId;
-
-  console.log(`UserId in the socket: ${userId}`);
-
-  if (userId !== "undefined") userSocketMap[userId] = socket.id;
-
-  console.log(`Socket data: ${JSON.stringify(userSocketMap)}`);
-
-  socket.on("disconnect", () => {
-    console.log(`User disconnected from the socket: ${userId}`);
-    delete userSocketMap[userId];
-  });
-
-  socket.on("sendMessage", ({ senderId, receiverId, message }) => {
-    console.log(`ReceiverId in the socket.on(sendMessage): ${receiverId}`);
-    const receiverSocketId = userSocketMap[receiverId];
-    console.log(`Receiver Id from the socket: ${receiverId}`);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("receiveMessage", {
-        senderId,
-        message,
-      });
-    }
-
-  });
-  socket.on('hello', ({message}) => {
-    console.log(message);
-  })
-});
-
-app.post("/sendMessage", async (req, res) => {
-  try {
-    const { senderId, receiverId, message } = req.body;
-
-    // console.log(`Sender Id : ${senderId}`);
-    // console.log(`Receiver Id : ${receiverId}`);
-    // console.log(`Message : ${message}`);
-
-    const [newMessage] = await pool.query(
-      "INSERT INTO Message (sender_id, receiver_id, message) VALUES (?, ?, ?)",
-      [senderId, receiverId, message]
-    );
-
-    const messageId = newMessage.insertId;
-
-    const [insertedMessage] = await pool.query(
-      "SELECT * FROM Message WHERE id = ?",
-      [messageId]
-    );
-
-    if (!insertedMessage.length) {
-      return res.status(500).json({ error: "Failed to retrieve sent message" });
-    }
-
-    console.log("userSocketMap:", userSocketMap); // Log the entire userSocketMap for debugging
-    console.log("Receiver Id:", receiverId); // Log the entire userSocketMap for debugging
-
-    const receiverSocketId = userSocketMap[receiverId];
-    console.log("ReceiverSocketId:", receiverSocketId); // Log the entire userSocketMap for debugging
-
-    if (receiverSocketId) {
-      console.log("Emitting receiveMessage event to the receiver", receiverId);
-      io.to(receiverSocketId).emit("newMessage", insertedMessage[0]);
-    } else {
-      console.log("Receiver socket ID not found");
-    }
-
-    res.status(201).json(insertedMessage[0]);
-  } catch (error) {
-    console.error("ERROR", error);
-    res.status(500).json({ error: "Failed to send message" });
-  }
-});
-
-http.listen(3000, () => console.log(`Socket is connected to the port: 3000`));
+const SOCKET_PORT = process.env.SOCKET_PORT || 3000;
+server.listen(SOCKET_PORT, () => console.log(`Socket is connected to port: ${SOCKET_PORT}`));

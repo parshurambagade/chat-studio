@@ -16,8 +16,8 @@ export default function UsersFlatListContainer() {
       
     if (!userId) return;
 
-    const api = `${API_ENDPOINT}/users/${userId}`;
-    console.log(api);   
+    // const api = `${API_ENDPOINT}/users/${userId}`;
+    // console.log(api);   
       const response = await axios.get(
         `${API_ENDPOINT}/users/${userId}`
       );
@@ -29,12 +29,12 @@ export default function UsersFlatListContainer() {
   };
 
   useEffect(() => {
-    console.log(`UserId from UsersFlatListContainer: ${userId}`);
+    // console.log(`UserId from UsersFlatListContainer: ${userId}`);
     fetchUsers();
   }, [userId]);
 
   useEffect(() => {
-    console.log(`Users in UsersFlatListContainer: ${users}`);
+    // console.log(`Users in UsersFlatListContainer: ${users}`);
   }, [users]);
 
   return (
