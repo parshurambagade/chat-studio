@@ -32,6 +32,29 @@ module.exports.getUserInfo = async (req, res) => {
   }
 };
 
+module.exports.getMessages = async (req, res) => {
+  try {
+    const { senderId, receiverId } = req.query;
+
+    if (!senderId || !receiverId) {
+      return res.status(400).json({ error: "Missing senderId or receiverId" });
+    }
+
+    const query = `
+      SELECT * FROM Message
+      WHERE (sender_id = ? AND receiver_id = ?)
+      OR (sender_id = ? AND receiver_id = ?)
+    `;
+    const queryParams = [senderId, receiverId, receiverId, senderId];
+
+    const [messages] = await pool.query(query, queryParams);
+    res.status(200).json(messages);
+  } catch (error) {
+    console.error("Error", error);
+    res.status(500).json({ error: "Failed to retrieve messages" });
+  }
+};
+
 module.exports.getUsersMessages = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -95,7 +118,7 @@ module.exports.messagesReceived = async (io, userSocketMap, { data }) => {
   console.log(`Messages received: ${JSON.stringify(data)}`);
   const sentMessages = data?.filter((message) => message.status == "sent")?.map((message) => message.id);
 
-  if (sentMessages.length === 0) return;
+  if (sentMessages?.length === 0) return;
 
   const query = "UPDATE Message SET status = 'delivered' WHERE id IN (?)";
 

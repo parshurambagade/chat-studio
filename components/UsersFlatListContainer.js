@@ -46,7 +46,7 @@ export default function UsersFlatListContainer() {
     //   keyExtractor={(user) => user.id}
     // />
     // </View>
-    <View>
+    <View >
     {users.map(user => <UserFlatListRow key={user.id} user={user} />)}
     </View>
   ))
@@ -60,7 +60,7 @@ const UserFlatListRow = ({ user }) => {
  
 
   return (
-    <View className="flex flex-row items-center justify-between border-b border-b-gray-200 py-2">
+    <View className="flex flex-row items-center justify-between border-t border-gray-300 py-2">
       <View className="flex flex-row items-center justify-center gap-4">
         <View>
           <Image
@@ -69,9 +69,9 @@ const UserFlatListRow = ({ user }) => {
           />
         </View>
 
-        <View className="flex gap-1 flex-col justify-center">
-          <Text>{username}</Text>
-          <Text>{email}</Text>
+        <View className="flex gap-1 flex-col justify-center ">
+          <Text className="text-gray-800">{username}</Text>
+          <Text className="text-gray-800">{email}</Text>
         </View>
       </View>
       <View>

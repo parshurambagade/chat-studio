@@ -57,14 +57,14 @@ const ChatScreen = () => {
   return (
     <SafeAreaView className=" flex bg-gray-200 ">
       {/* HEADER SECTION */}
-      <View className="px-6 py-4 flex flex-row items-center justify-between bg-[#111827]">
+      <View className="px-6 py-3 flex flex-row items-center justify-between bg-[#111827]">
         <View>
           <Pressable onPress={handleLogout}>
             <Image
               source={{
                 uri: "https://media.istockphoto.com/id/1138008134/photo/indian-man-headshot.jpg?s=2048x2048&w=is&k=20&c=dr92Z0DpohmRqf1-xgq8NiTMeFR_d9fLorGUctLGrwI=",
               }}
-              className="h-10 w-10 rounded-full"
+              className="h-9 w-9 rounded-full"
             />
           </Pressable>
         </View>
@@ -82,10 +82,10 @@ const ChatScreen = () => {
       </View>
 
       <View className="flex justify-between flex-col bg-gray-200 h-[85vh]">
-        <View className="mx-4 h-1/2 flex-row justify-between  mt-4">
+        {/* <View className="mx-4 h-1/2 flex-row justify-between  mt-4">
           <Text className="text-base text-gray-700">Chats</Text>
           <Icon name="chevron-down" size={22} color="gray" />
-        </View>
+        </View> */}
 
         <PeopleContainer />
       </View>

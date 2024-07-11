@@ -43,22 +43,6 @@ export const StackNavigator = () => {
           }}
         />
         <Tab.Screen
-          name="Profile"
-          component={ProfileScreen}
-          options={{
-            tabBarStyle: { backgroundColor: "#101010", padding: 4, height: 60 },
-            headerShown: false,
-            tabBarIcon: ({ focused }) => {
-              return focused ? (
-                <Ionicons name="person-add-outline" size={24} color="white" />
-              ) : (
-                <Ionicons name="person-add-outline" size={24} color="#c0c5c5" />
-              );
-            },
-          }}
-        />
-
-        <Tab.Screen
           name="Calls"
           component={VideoCallScreen}
           options={{
@@ -69,6 +53,22 @@ export const StackNavigator = () => {
                 <Ionicons name="call-outline" size={24} color="white" />
               ) : (
                 <Ionicons name="call-outline" size={24} color="#c0c5c5" />
+              );
+            },
+          }}
+        />
+
+        <Tab.Screen
+          name="Profile"
+          component={ProfileScreen}
+          options={{
+            tabBarStyle: { backgroundColor: "#101010", padding: 4, height: 60 },
+            headerShown: false,
+            tabBarIcon: ({ focused }) => {
+              return focused ? (
+                <Ionicons name="person-add-outline" size={24} color="white" />
+              ) : (
+                <Ionicons name="person-add-outline" size={24} color="#c0c5c5" />
               );
             },
           }}

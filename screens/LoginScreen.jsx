@@ -93,20 +93,22 @@ const LoginScreen = () => {
   };
 
   return (
-    <SafeAreaView className="flex flex-1 justify-center p-6 bg-slate-900">
+    <SafeAreaView className="flex flex-1 justify-center p-6">
       <KeyboardAvoidingView>
         <View>
-          <Text className="text-center text-2xl mb-8">Login</Text>
+          <Text className="text-center text-2xl mb-8 text-gray-900">Login</Text>
           <TextInput
-            className="border-none border-b border-gray-300 pb-2 mb-6 mt-2 px-2"
+            className="border-none border-b border-gray-300 text-gray-800 pb-2 mb-6 mt-2 px-2"
             placeholder="Email"
+            placeholderTextColor="#a0a0a0"
             keyboardType="email-address"
             onChangeText={(text) => setEmail(text)}
             value={email}
           />
           <TextInput
-            className="border-none border-b border-gray-300 pb-2 mb-6 mt-2 px-2"
+            className="border-none border-b border-gray-300 text-gray-800 pb-2 mb-6 mt-2 px-2"
             placeholder="Password"
+            placeholderTextColor="#a0a0a0"
             secureTextEntry
             onChangeText={(text) => setPassword(text)}
             value={password}
@@ -122,7 +124,7 @@ const LoginScreen = () => {
             className="justify-center items-center mt-8"
             onPress={() => navigation.navigate("Register")}
           >
-            <Text>New here? Create account!</Text>
+            <Text className="text-center text-gray-600">New here? Create account!</Text>
           </Pressable>
         </View>
       </KeyboardAvoidingView>

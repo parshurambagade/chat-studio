@@ -1,5 +1,5 @@
 const express = require("express");
-const { sendMessage, messagesReceived, messagesSeen } = require("./controllers/userControllers");
+const { sendMessage, messagesReceived, messagesSeen, getMessages } = require("./controllers/userControllers");
 const { login, register } = require("./controllers/authControllers");
 const { getUserInfo, getUsers, getUsersMessages } = require("./controllers/userControllers");
 const { connectToDatabase } = require("./db");
@@ -21,6 +21,7 @@ app.get('/', (req, res) => res.json("hello"));
 app.post('/register', register);
 app.post('/login', login);
 app.get("/users/:userId", getUsers);
+app.get("/messages", getMessages);
 app.get('/userInfo/:userId', getUserInfo);
 app.get("/userMessages/:userId", getUsersMessages);
 
