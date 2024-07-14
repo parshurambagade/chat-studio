@@ -9,11 +9,12 @@ import {
   Alert,
 } from "react-native";
 import { TextInput } from "react-native-gesture-handler";
-import { API_ENDPOINT, DEFAULT_IMAGE_URL } from "../constants";
+import {  DEFAULT_IMAGE_URL } from "../constants";
 import axios from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { authContext } from "../context/authContext";
+import { AuthContext } from "../context/AuthContext";
 import { jwtDecode } from "jwt-decode";
+import {API_ENDPOINT} from '@env';
 
 const RegisterScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -21,7 +22,7 @@ const RegisterScreen = ({ navigation }) => {
   const [password, setPassword] = useState("");
   const [image, setImage] = useState("");
 
-  const {token, setToken, setUserId} = useContext(authContext);
+  const {token, setToken, setUserId} = useContext(AuthContext);
 
   useEffect(() => {
     if(token){
@@ -44,19 +45,12 @@ const RegisterScreen = ({ navigation }) => {
      
       console.log(`Response: ${response.data}`);
       const token = response?.data?.token;
-
-      await AsyncStorage.setItem("authToken", token.toString());
-      const storedToken = await AsyncStorage.getItem("authToken");
-
-      setToken(storedToken);
-
+      const storedToken = await AsyncStorage.setItem("authToken", JSON.stringify(token));
       const {userId} = jwtDecode(token)
-
-      await AsyncStorage.setItem("userId",userId.toString());
-      const storedUserId = await AsyncStorage.getItem("userId");
+      const storedUserId = await AsyncStorage.setItem("userId", JSON.stringify(userId));
 
       setUserId(storedUserId);
-   
+      setToken(storedToken);
       Alert.alert("Account created!");
       setUsername("");
       setEmail("");
@@ -72,13 +66,13 @@ const RegisterScreen = ({ navigation }) => {
     <SafeAreaView className="flex flex-1 justify-center p-6">
       <KeyboardAvoidingView>
         <View>
-          <Text className="text-center text-2xl mb-8">Register</Text>
+          <Text className="text-center text-2xl mb-8 text-gray-900">Register</Text>
           <View>
           <View className="justify-center items-center mt-4 mb-8" >
             <Image
               className="w-24 h-24 rounded-full"
               source={{
-                uri: `${image ? image : DEFAULT_IMAGE_URL}`,
+                uri: `${image.length ? image : DEFAULT_IMAGE_URL}`,
               }}
             />
             {/* <Text style={{backgroundColor: "black",textAlign: "center", color: "gray", marginTop: 4, fontSize: 12}}>Add</Text> */}
@@ -86,27 +80,31 @@ const RegisterScreen = ({ navigation }) => {
           </View>
 
           <TextInput
-           className="border-none border-b border-gray-300 pb-2 mb-6 mt-2 px-2"
+           className="border-none border-b text-gray-800 border-gray-300 pb-2 mb-6 mt-2 px-2"
             placeholder="Username"
+            placeholderTextColor="#a0a0a0"
             onChangeText={(text) => setUsername(text)}
             value={username}
           />
-          <TextInput
-            className="border-none border-b border-gray-300 pb-2 mb-6 mt-2 px-2"
+          {/* <TextInput
+            className="border-none border-b text-gray-800 border-gray-300 pb-2 mb-6 mt-2 px-2"
             placeholder="Profile picture"
+            placeholderTextColor="#a0a0a0"
             onChangeText={(text) => setImage(text)}
             value={image}
-          />
+          /> */}
           <TextInput
-             className="border-none border-b border-gray-300 pb-2 mb-6 mt-2 px-2"
+             className="border-none border-b text-gray-800 border-gray-300 pb-2 mb-6 mt-2 px-2"
             placeholder="Email"
+            placeholderTextColor="#a0a0a0"
             keyboardType="email-address"
             onChangeText={(text) => setEmail(text)}
             value={email}
           />
           <TextInput
-             className="border-none border-b border-gray-300 pb-2 mb-6 mt-2 px-2"
+             className="border-none border-b text-gray-800 border-gray-300 pb-2 mb-6 mt-2 px-2"
             placeholder="Password"
+            placeholderTextColor="#a0a0a0"
             secureTextEntry
             onChangeText={(text) => setPassword(text)}
             value={password}
@@ -120,7 +118,7 @@ const RegisterScreen = ({ navigation }) => {
             className="justify-center items-center mt-8"
             onPress={() => navigation.navigate("Login")}
           >
-            <Text>Already have account? login here!</Text>
+            <Text className="text-gray-600">Already have account? login here!</Text>
           </Pressable>
         </View>
       </KeyboardAvoidingView>

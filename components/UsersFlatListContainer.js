@@ -1,21 +1,27 @@
 import { Image, Pressable, Text, View } from "react-native";
 import React, { useContext, useEffect, useState } from "react";
-import { API_ENDPOINT, DEFAULT_IMAGE_URL } from "../constants";
-import { authContext } from "../context/authContext";
+import { DEFAULT_IMAGE_URL } from "../constants";
+import { AuthContext } from "../context/AuthContext";
 import axios from "axios";
 import { FlatList, ScrollView } from "react-native-gesture-handler";
 import { useNavigation } from "@react-navigation/native";
+import {API_ENDPOINT} from '@env';
 
 export default function UsersFlatListContainer() {
   const [users, setUsers] = useState([]);
-  const { userId } = useContext(authContext);
+  const { userId } = useContext(AuthContext);
 
   const fetchUsers = async () => {
     try {
-      if (!userId) return;
+      
+    if (!userId) return;
+
+    // const api = `${API_ENDPOINT}/users/${userId}`;
+    // console.log(api);   
       const response = await axios.get(
-        `${API_ENDPOINT}/users/${userId}`
+        `${API_ENDPOINT}users/${userId}`
       );
+   
       setUsers(response.data);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -23,12 +29,12 @@ export default function UsersFlatListContainer() {
   };
 
   useEffect(() => {
-    console.log(`UserId from UsersFlatListContainer: ${userId}`);
+    // console.log(`UserId from UsersFlatListContainer: ${userId}`);
     fetchUsers();
   }, [userId]);
 
   useEffect(() => {
-    console.log(`Users in UsersFlatListContainer: ${users}`);
+    // console.log(`Users in UsersFlatListContainer: ${users}`);
   }, [users]);
 
   return (
@@ -40,7 +46,7 @@ export default function UsersFlatListContainer() {
     //   keyExtractor={(user) => user.id}
     // />
     // </View>
-    <View>
+    <View >
     {users.map(user => <UserFlatListRow key={user.id} user={user} />)}
     </View>
   ))
@@ -54,7 +60,7 @@ const UserFlatListRow = ({ user }) => {
  
 
   return (
-    <View className="flex flex-row items-center justify-between border-b border-b-gray-200 py-2">
+    <View className="flex flex-row items-center justify-between border-t border-gray-300 py-2">
       <View className="flex flex-row items-center justify-center gap-4">
         <View>
           <Image
@@ -63,9 +69,9 @@ const UserFlatListRow = ({ user }) => {
           />
         </View>
 
-        <View className="flex gap-1 flex-col justify-center">
-          <Text>{username}</Text>
-          <Text>{email}</Text>
+        <View className="flex gap-1 flex-col justify-center ">
+          <Text className="text-gray-800">{username}</Text>
+          <Text className="text-gray-800">{email}</Text>
         </View>
       </View>
       <View>

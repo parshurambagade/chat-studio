@@ -1,17 +1,27 @@
-import 'react-native-gesture-handler';
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
-import { StackNavigator } from './components/StackNavigator';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { AuthContextProvider } from './context/authContext';
-import { SocketContextProvider } from './context/socketContext';
+import "react-native-gesture-handler";
+// import { View, Text } from 'react-native'
+import React from "react";
+import { SocketContextProvider } from "./context/SocketContext";
+import { StackNavigator } from "./navigators/StackNavigator";
+import { AuthContextProvider } from "./context/AuthContext";
+import { UserContextProvider } from "./context/UserContext";
+import { ChatContextProvider } from "./context/ChatContext";
+import { VideoCallContextProvider } from "./context/VideoCallContext";
 
-export default function App() {
+const App = () => {
   return (
-    <AuthContextProvider>
-      <SocketContextProvider>
-    <StackNavigator />
+    <SocketContextProvider>
+      <AuthContextProvider>
+        <UserContextProvider>
+          <ChatContextProvider>
+            <VideoCallContextProvider>
+          <StackNavigator />
+          </VideoCallContextProvider>
+          </ChatContextProvider>
+        </UserContextProvider>
+      </AuthContextProvider>
     </SocketContextProvider>
-    </AuthContextProvider>
   );
-}
+};
+
+export default App;
