@@ -5,7 +5,7 @@ module.exports.getUsers = async (req, res) => {
   try {
     const { userId } = req.params;
     const [result] = await pool.query(
-      "SELECT username, email, id FROM User WHERE id NOT IN (?)",
+      "SELECT username, email, id FROM users WHERE id NOT IN (?)",
       [userId]
     );
     res.json(result);
@@ -22,7 +22,7 @@ module.exports.getUserInfo = async (req, res) => {
       return res.status(400).json({ error: "Missing userId" });
     }
 
-    const query = "SELECT id, username, email, image FROM User WHERE id = ?";
+    const query = "SELECT id, username, email, image FROM users WHERE id = ?";
     const [response] = await pool.query(query, [userId]);
 
     res.status(200).json(response);
@@ -41,7 +41,7 @@ module.exports.getMessages = async (req, res) => {
     }
 
     const query = `
-      SELECT * FROM Message
+      SELECT * FROM messages
       WHERE (sender_id = ? AND receiver_id = ?)
       OR (sender_id = ? AND receiver_id = ?)
     `;
@@ -64,7 +64,7 @@ module.exports.getUsersMessages = async (req, res) => {
     }
 
     const query = `
-        SELECT * FROM Message
+        SELECT * FROM messages
         WHERE (sender_id = ? OR receiver_id = ?)
       `;
     const queryParams = [userId, userId];
@@ -80,39 +80,46 @@ module.exports.getUsersMessages = async (req, res) => {
 
 module.exports.sendMessage = async (io, userSocketMap, { senderId, receiverId, message }) => {
   try {
-    // Insert the new message directly into the database
-    const [newMessage] = await pool.query(
-      "INSERT INTO Message (sender_id, receiver_id, message) VALUES (?, ?, ?)",
-      [senderId, receiverId, message]
-    );
+      const [newMessage] = await pool.query(
+          "INSERT INTO messages (sender_id, receiver_id, message) VALUES (?, ?, ?)",
+          [senderId, receiverId, message]
+      );
 
-    const messageId = newMessage.insertId;
+      const messageId = newMessage.insertId;
 
-    const [insertedMessage] = await pool.query(
-      "SELECT * FROM Message WHERE id = ?",
-      [messageId]
-    );
+      console.log("new message id", messageId);
 
-    if (!insertedMessage.length) {
-      console.error("Failed to retrieve sent message");
-      return;
-    }
+      const [insertedMessage] = await pool.query(
+          "SELECT * FROM messages WHERE id = ?",
+          [messageId]
+      );
 
-    const receiverSocketId = userSocketMap[receiverId];
+      if (!insertedMessage.length) {
+          console.error("Failed to retrieve sent message");
+          return;
+      }
 
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("newMessage", insertedMessage[0]);
-    }
+      console.log("Inserted Message:", insertedMessage[0]); // Debugging log
 
-    // Also emit the new message back to the sender to update their state
-    const senderSocketId = userSocketMap[senderId];
-    if (senderSocketId) {
-      io.to(senderSocketId).emit("newMessage", insertedMessage[0]);
-    }
+      const receiverSocketId = userSocketMap[receiverId];
+      console.log("receiverSocketId:", receiverSocketId);
+      
+      if (receiverSocketId) {
+          io.to(receiverSocketId).emit("newMessage for ", insertedMessage[0].receiver_id, " message is ", insertedMessage[0]);
+      }
+
+      const senderSocketId = userSocketMap[senderId];
+      if (senderSocketId) {
+          io.to(senderSocketId).emit("newMessage", insertedMessage[0]);
+      }
   } catch (error) {
-    console.error("ERROR", error);
+      console.error("ERROR", error);
   }
 };
+
+
+
+
 
 module.exports.messagesReceived = async (io, userSocketMap, { data }) => {
   console.log(`Messages received: ${JSON.stringify(data)}`);
@@ -120,7 +127,7 @@ module.exports.messagesReceived = async (io, userSocketMap, { data }) => {
 
   if (sentMessages?.length === 0) return;
 
-  const query = "UPDATE Message SET status = 'delivered' WHERE id IN (?)";
+  const query = "UPDATE messages SET status = 'delivered' WHERE id IN (?)";
 
   try {
     await pool.query(query, [sentMessages]);
@@ -138,7 +145,7 @@ module.exports.messagesSeen = async (io, userSocketMap, { data }) => {
     return;
   }
 
-  const query = "UPDATE Message SET status = 'seen' WHERE id IN (?)";
+  const query = "UPDATE messages SET status = 'seen' WHERE id IN (?)";
 
   try {
     await pool.query(query, [seenMessages]);
@@ -148,5 +155,34 @@ module.exports.messagesSeen = async (io, userSocketMap, { data }) => {
     io.to(userSocketMap[data[0].sender_id]).emit("messages-seen", seenMessages);
   } catch (error) {
     console.error(`Error updating message status: ${error.message}`);
+  }
+};
+
+module.exports.newMessageSeen = async (io, userSocketMap, { messageId }) => {
+  console.log(`New message id: ${messageId}`);
+
+  const query = "UPDATE messages SET status = 'seen' WHERE id = ?";
+
+  try {
+    const [result] = await pool.query(query, [messageId]);
+
+    if (result.affectedRows === 0) {
+      console.error(`No message found with id: ${messageId}`);
+      return;
+    }
+
+    console.log(`Updated new message id ${messageId} status to 'seen'`);
+
+    // Find the sender id to emit the event
+    const [message] = await pool.query("SELECT sender_id FROM messages WHERE id = ?", [messageId]);
+
+    if (message.length > 0) {
+      const senderSocketId = userSocketMap[message[0].sender_id];
+      if (senderSocketId) {
+        io.to(senderSocketId).emit("new-message-seen", messageId);
+      }
+    }
+  } catch (error) {
+    console.error(`Error updating new message status: ${error.message}`);
   }
 };

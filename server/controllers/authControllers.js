@@ -4,7 +4,7 @@ const { pool } = require("../db.js");
 const bcrypt = require("bcrypt");
 
 async function isEmailRegistered(email) {
-  const query = "SELECT COUNT(*) AS count FROM User WHERE email = ?";
+  const query = "SELECT COUNT(*) AS count FROM users WHERE email = ?";
   const [rows] = await pool.query(query, [email]);
   return rows[0].count > 0;
 }
@@ -27,17 +27,17 @@ module.exports.register = async (req, res) => {
     const hash = await bcrypt.hash(password, salt);
 
     await pool.query(
-      "INSERT INTO User (username, email, password, image) VALUES (?, ?, ?, ?)",
+      "INSERT INTO users (username, email, password, image) VALUES (?, ?, ?, ?)",
       [username, email, hash, image]
     );
 
-    const [user] = await pool.query("SELECT * FROM User WHERE email = ?", [
+    const [user] = await pool.query("SELECT * FROM users WHERE email = ?", [
       email,
     ]);
 
     const token = jwt.sign(
       { userId: user[0].id },
-      process.env.VITE_JWT_SECRET,
+      process.env.JWT_SECRET,
       {
         expiresIn: "1h",
       }
@@ -58,7 +58,7 @@ module.exports.login = async (req, res) => {
       return res.status(400).json({ message: "Email and password are required" });
     }
 
-    const [user] = await pool.query("SELECT * FROM User WHERE email = ?", [
+    const [user] = await pool.query("SELECT * FROM users WHERE email = ?", [
       email,
     ]);
 
@@ -73,7 +73,7 @@ module.exports.login = async (req, res) => {
 
     const token = jwt.sign(
       { userId: user[0].id },
-      process.env.VITE_JWT_SECRET,
+      process.env.JWT_SECRET,
       {
         expiresIn: "1h",
       }

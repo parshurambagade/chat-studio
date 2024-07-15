@@ -1,5 +1,5 @@
 const express = require("express");
-const { sendMessage, messagesReceived, messagesSeen, getMessages } = require("./controllers/userControllers");
+const { sendMessage, messagesReceived, messagesSeen, getMessages, newMessageSeen } = require("./controllers/userControllers");
 const { login, register } = require("./controllers/authControllers");
 const { getUserInfo, getUsers, getUsersMessages } = require("./controllers/userControllers");
 const { connectToDatabase } = require("./db");
@@ -32,9 +32,13 @@ const userSocketMap = {}; // Move userSocketMap inside index.js
 
 io.on("connection", (socket) => {
   console.log("New client connected");
-  const userId = socket.handshake.query.userId;
+  const userId = socket?.handshake?.query?.userId;
 
-  if (userId !== "undefined") userSocketMap[userId] = socket.id;
+  console.log("userid in the io.on connection: ", userId);
+
+  if (userId && userId !== "undefined") {
+    userSocketMap[userId] = socket.id;
+  }
 
   socket.on("sendMessage", async (data) => {
     await sendMessage(io, userSocketMap, data);
@@ -46,6 +50,10 @@ io.on("connection", (socket) => {
 
   socket.on("messages-seen", async (data) => {
     await messagesSeen(io, userSocketMap, data);
+  });
+
+  socket.on('new-message-seen', async (messageId) => {
+    await newMessageSeen(io, userSocketMap, messageId);
   });
 
   // Handle offer, answer, and ICE candidate events for video call and audio call
@@ -65,7 +73,9 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    delete userSocketMap[userId];
+    if (userId && userId !== "undefined") {
+      delete userSocketMap[userId];
+    }
     console.log("Client disconnected");
   });
 });

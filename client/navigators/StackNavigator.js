@@ -115,7 +115,7 @@ export const StackNavigator = () => {
 
   return (
     <NavigationContainer>
-      {token === null || token === "" ? <AuthStack /> : <MainStack />}
+      {!token.length || !token ? <AuthStack /> : <MainStack />}
     </NavigationContainer>
   );
 };

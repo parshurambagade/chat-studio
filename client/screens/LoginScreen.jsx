@@ -39,7 +39,7 @@ const LoginScreen = () => {
     // await AsyncStorage.removeItem("userId");
     //console.log('Token in login screen', await AsyncStorage.getItem("authToken"));
 
-    if (token) {
+    if (token.length) {
       // console.log("Token in login screen", token);
       navigation.navigate("MainStack", { screen: "Main" });
     } else {
@@ -88,7 +88,7 @@ const LoginScreen = () => {
         setPassword("");
       }
     } catch (e) {
-      console.error(e);
+      console.error("Error in handleLogin: ", e);
     }
   };
 

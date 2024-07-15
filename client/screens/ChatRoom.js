@@ -66,7 +66,7 @@ const ChatRoom = ({ navigation }) => {
         });
 
         const fetchedMessages = response.data.sort(
-          (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+          (a, b) => new Date(a.created_at) - new Date(b.created_at)
         );
         setMessages(fetchedMessages);
 
@@ -92,23 +92,34 @@ const ChatRoom = ({ navigation }) => {
 
   useEffect(() => {
     const handleNewMessage = (newMessage) => {
-      setMessages((prevMessages) =>
-        [...prevMessages, newMessage].sort(
-          (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
-        )
-      );
-    };
+      console.log("New Message Received:", newMessage); // Debugging log
+      setMessages((prevMessages) => {
+          const updatedMessages = [...prevMessages, newMessage].sort(
+              (a, b) => new Date(a.created_at) - new Date(b.created_at)
+          );
+  
+          if (newMessage.status !== "seen" && newMessage.receiver_id === userId) {
+              socket.emit('new-message-seen', { messageId: newMessage.id });
+          }
+  
+          return updatedMessages;
+      });
+  };
+  
 
     if (socket) {
-      socket.on("newMessage", handleNewMessage);
+        socket.on("newMessage", handleNewMessage);
     }
 
     return () => {
-      if (socket) {
-        socket.off("newMessage", handleNewMessage);
-      }
+        if (socket) {
+            socket.off("newMessage", handleNewMessage);
+        }
     };
-  }, [socket]);
+}, [socket, userId]);
+
+  
+  
 
   useEffect(() => {
     const handleMessagesSeen = (updatedMessages) => {
@@ -134,33 +145,36 @@ const ChatRoom = ({ navigation }) => {
   const sendMessage = async (senderId, receiverId) => {
     try {
       if (!senderId || !receiverId || !message.trim()) return;
-
+  
       const newMessage = {
         sender_id: senderId,
         receiver_id: receiverId,
         message: message,
-        timestamp: new Date().toISOString(),
-        status: "sent",
+        created_at: new Date().toISOString(),
       };
-
+  
       setMessages((prevMessages) =>
         [...prevMessages, newMessage].sort(
-          (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+          (a, b) => new Date(a.created_at) - new Date(b.created_at)
         )
       );
-
-      socket.emit("sendMessage", { senderId, receiverId, message });
-
+  
+      socket.emit("sendMessage", { senderId, receiverId, message: newMessage.message });
+  
       setMessage("");
     } catch (error) {
       console.error("Error", error);
     }
   };
+  
+  
 
   const formatTime = (time) => {
+    // console.log("Time to format:", time);
     const options = { hour: "numeric", minute: "numeric" };
     return new Date(time).toLocaleString("en-US", options);
-  };
+};
+
 
   return (
     <KeyboardAvoidingView className="flex flex-1 bg-white" behavior="padding">
@@ -194,21 +208,22 @@ const ChatRoom = ({ navigation }) => {
               </Text>
               <View className="flex flex-row gap-6 justify-between">
                 <Text className="text-right text-[9px] text-gray-400 mt-1">
-                  {formatTime(item?.timestamp)}
+                  {formatTime(item?.created_at)}
                 </Text>
                 {item?.sender_id == userId &&
-                  (item?.status == "sent" ? (
-                    <Text className="text-right text-gray-400 mt-1">
-                      <Icon name="checkmark" size={14} />
-                    </Text>
-                  ) : item?.status == "delivered" ? (
-                    <Text className="text-right t text-gray-400 mt-1">
-                      <Icon name="checkmark-done" size={14} />{" "}
-                    </Text>
-                  ) : (
+                  (item?.status == "seen" ? (
                     <Text className="text-right text-gray-400 mt-1">
                       <Icon name="checkmark-done" color="blue" size={14} />
                     </Text>
+                  ) : item?.status == "delivered" ? (
+                    <Text className="text-right t text-gray-400 mt-1">
+                      <Icon name="checkmark-done" size={14} />
+                    </Text>
+                  ) : (
+                    
+                    <Text className="text-right text-gray-400 mt-1">
+                    <Icon name="checkmark" size={14} />
+                  </Text>
                   ))}
               </View>
             </Pressable>

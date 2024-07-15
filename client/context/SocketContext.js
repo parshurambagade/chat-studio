@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
-// import dotenv from 'react-native-dotenv';
 import { API_ENDPOINT } from '@env';
+import { useAuthContext } from './AuthContext';
 
 const SocketContext = createContext();
 
@@ -12,9 +12,13 @@ export const useSocketContext = () => {
 export const SocketContextProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const {userId} = useAuthContext();
 
   useEffect(() => {
-    const socketConnection = io(API_ENDPOINT, { transports: ['websocket'] }); // Adjust the URL as needed
+    const socketConnection = io(API_ENDPOINT, { 
+      transports: ['websocket'], 
+      query: { userId }  // Add userId to the connection options
+    });
     setSocket(socketConnection);
 
     socketConnection.on('connect', () => {
@@ -31,7 +35,7 @@ export const SocketContextProvider = ({ children }) => {
         socketConnection.close();
       }
     };
-  }, []);
+  }, [userId]); // Add userId as a dependency to the useEffect
 
   return (
     <SocketContext.Provider value={{ socket, isInitialized }}>

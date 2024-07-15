@@ -1,10 +1,10 @@
 import { Text, View } from "react-native";
 import React, { useContext, useEffect, useState } from "react";
-import { authContext } from "../context/authContext";
+import { AuthContext } from "../context/AuthContext";
 import UsersFlatListContainer from "../components/UsersFlatListContainer";
 
 export default function PeopleScreen() {
-  const { userId, token } = useContext(authContext);
+  const { userId, token } = useContext(AuthContext);
   // State to store fetched users
 
   // useEffect(() => {

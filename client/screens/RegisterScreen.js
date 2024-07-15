@@ -15,14 +15,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContext } from "../context/AuthContext";
 import { jwtDecode } from "jwt-decode";
 import {API_ENDPOINT} from '@env';
+import { useNavigation } from "@react-navigation/native";
 
-const RegisterScreen = ({ navigation }) => {
+const RegisterScreen = () => {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [image, setImage] = useState("");
+  const [image, setImage] = useState(DEFAULT_IMAGE_URL);
 
   const {token, setToken, setUserId} = useContext(AuthContext);
+
+  const navigation = useNavigation();
 
   useEffect(() => {
     if(token){
@@ -33,9 +36,9 @@ const RegisterScreen = ({ navigation }) => {
   const handleRegister =  async () => {
     try{
     // Place your Register logic here
-    if (email && password && username && image) {
+    if (email && password && username) {
 
-      const response = await axios.post(`${API_ENDPOINT}/register`, {
+      const response = await axios.post(`${API_ENDPOINT}register`, {
         username: username,
         password: password,
         email: email,
@@ -45,21 +48,25 @@ const RegisterScreen = ({ navigation }) => {
      
       console.log(`Response: ${response.data}`);
       const token = response?.data?.token;
-      const storedToken = await AsyncStorage.setItem("authToken", JSON.stringify(token));
+      await AsyncStorage.setItem("authToken", JSON.stringify(token));
       const {userId} = jwtDecode(token)
-      const storedUserId = await AsyncStorage.setItem("userId", JSON.stringify(userId));
+      await AsyncStorage.setItem("userId", JSON.stringify(userId));
+
+      const storedToken = await AsyncStorage.getItem("authToken");
+      const storedUserId = await AsyncStorage.getItem("userId");
 
       setUserId(storedUserId);
       setToken(storedToken);
+
       Alert.alert("Account created!");
       setUsername("");
       setEmail("");
       setPassword("");
-      setImage("");
+
       
     } 
   }catch(e){
-    console.error(e);
+    console.error("Error in handleRegister: ", e);
   };
 }
   return (

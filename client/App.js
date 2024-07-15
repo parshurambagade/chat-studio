@@ -10,8 +10,8 @@ import { VideoCallContextProvider } from "./context/VideoCallContext";
 
 const App = () => {
   return (
-    <SocketContextProvider>
       <AuthContextProvider>
+    <SocketContextProvider>
         <UserContextProvider>
           <ChatContextProvider>
             <VideoCallContextProvider>
@@ -19,8 +19,8 @@ const App = () => {
           </VideoCallContextProvider>
           </ChatContextProvider>
         </UserContextProvider>
-      </AuthContextProvider>
     </SocketContextProvider>
+      </AuthContextProvider>
   );
 };
 
