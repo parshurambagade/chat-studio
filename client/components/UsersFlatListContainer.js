@@ -6,10 +6,12 @@ import axios from "axios";
 import { FlatList, ScrollView } from "react-native-gesture-handler";
 import { useNavigation } from "@react-navigation/native";
 import {API_ENDPOINT} from '@env';
+import { useSocketContext } from "../context/SocketContext";
 
 export default function UsersFlatListContainer() {
   const [users, setUsers] = useState([]);
   const { userId } = useContext(AuthContext);
+  const {socket} = useSocketContext();
 
   const fetchUsers = async () => {
     try {
@@ -31,7 +33,7 @@ export default function UsersFlatListContainer() {
   useEffect(() => {
     // console.log(`UserId from UsersFlatListContainer: ${userId}`);
     fetchUsers();
-  }, [userId]);
+  }, [userId, socket]);
 
   useEffect(() => {
     // console.log(`Users in UsersFlatListContainer: ${users}`);

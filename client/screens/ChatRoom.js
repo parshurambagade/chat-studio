@@ -91,34 +91,37 @@ const ChatRoom = ({ navigation }) => {
   }, [route?.params?.receiverId, userId, socket]);
 
   useEffect(() => {
-    const handleNewMessage = (newMessage) => {
-      console.log("New Message Received:", newMessage); // Debugging log
+    const handleNewMessage = async (newMessage) => {
+      console.log("New Message Received:", newMessage, "userid is: ", userId); // Debugging log
+  
+      if (newMessage.receiver_id == userId) {
+        console.log("Emmiting new-message-seen event!");
+        await socket.emit("new-message-seen", { messageId: newMessage.id });
+      }
+  
       setMessages((prevMessages) => {
+        // Check if the message already exists
+        if (!prevMessages.some((msg) => msg.id === newMessage.id)) {
           const updatedMessages = [...prevMessages, newMessage].sort(
-              (a, b) => new Date(a.created_at) - new Date(b.created_at)
+            (a, b) => new Date(a.created_at) - new Date(b.created_at)
           );
   
-          if (newMessage.status !== "seen" && newMessage.receiver_id === userId) {
-              socket.emit('new-message-seen', { messageId: newMessage.id });
-          }
-  
           return updatedMessages;
-      });
-  };
-  
-
-    if (socket) {
-        socket.on("newMessage", handleNewMessage);
-    }
-
-    return () => {
-        if (socket) {
-            socket.off("newMessage", handleNewMessage);
         }
+        return prevMessages;
+      });
     };
-}, [socket, userId]);
-
   
+    if (socket) {
+      socket.on("newMessage", handleNewMessage);
+    }
+  
+    return () => {
+      if (socket) {
+        socket.off("newMessage", handleNewMessage);
+      }
+    };
+  }, [socket, userId]);
   
 
   useEffect(() => {
@@ -142,39 +145,83 @@ const ChatRoom = ({ navigation }) => {
     };
   }, [socket]);
 
+  useEffect(() => {
+    const handleNewMessageSeen = (messageId) => {
+      console.log("Handling new-message-seen event");
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          messageId == (msg.id) ? { ...msg, status: "seen" } : msg
+        )
+      );
+    };
+
+    if (socket) {
+      socket.on("new-message-seen", handleNewMessageSeen);
+    }
+
+    return () => {
+      if (socket) {
+        socket.off("new-message-seen", handleNewMessageSeen);
+      }
+    };
+  }, [socket]);
+
+  useEffect(() => {
+    const handleNewMessageDelivered = (messageId) => {
+      console.log("Handling new-message-delivered event");
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          messageId == (msg.id) ? { ...msg, status: "delivered" } : msg
+        )
+      );
+    };
+
+
+    if (socket) {
+      socket.on("new-message-delivered", handleNewMessageDelivered);
+    }
+
+    return () => {
+      if (socket) {
+        socket.off("new-message-delivered", handleNewMessageDelivered);
+      }
+    };
+  }, [socket, userId]);
+
   const sendMessage = async (senderId, receiverId) => {
     try {
       if (!senderId || !receiverId || !message.trim()) return;
-  
+
       const newMessage = {
         sender_id: senderId,
         receiver_id: receiverId,
         message: message,
         created_at: new Date().toISOString(),
       };
-  
-      setMessages((prevMessages) =>
-        [...prevMessages, newMessage].sort(
-          (a, b) => new Date(a.created_at) - new Date(b.created_at)
-        )
-      );
-  
-      socket.emit("sendMessage", { senderId, receiverId, message: newMessage.message });
-  
+
+      // setMessages((prevMessages) =>
+      //   [...prevMessages, newMessage].sort(
+      //     (a, b) => new Date(a.created_at) - new Date(b.created_at)
+      //   )
+      // );
+
+      socket.emit("sendMessage", {
+        senderId,
+        receiverId,
+        message: newMessage.message,
+      });
+
       setMessage("");
     } catch (error) {
       console.error("Error", error);
     }
   };
-  
-  
 
   const formatTime = (time) => {
     // console.log("Time to format:", time);
     const options = { hour: "numeric", minute: "numeric" };
     return new Date(time).toLocaleString("en-US", options);
-};
-
+  };
 
   return (
     <KeyboardAvoidingView className="flex flex-1 bg-white" behavior="padding">
@@ -220,10 +267,9 @@ const ChatRoom = ({ navigation }) => {
                       <Icon name="checkmark-done" size={14} />
                     </Text>
                   ) : (
-                    
                     <Text className="text-right text-gray-400 mt-1">
-                    <Icon name="checkmark" size={14} />
-                  </Text>
+                      <Icon name="checkmark" size={14} />
+                    </Text>
                   ))}
               </View>
             </Pressable>
@@ -246,7 +292,7 @@ const ChatRoom = ({ navigation }) => {
           onPress={() => sendMessage(userId, route?.params?.receiverId)}
           className=" py-2 rounded-2xl"
         >
-          <Icon color="blue" size={24} name="send"/>
+          <Icon color="blue" size={24} name="send" />
         </Pressable>
       </View>
     </KeyboardAvoidingView>

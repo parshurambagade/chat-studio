@@ -1,5 +1,5 @@
 const express = require("express");
-const { sendMessage, messagesReceived, messagesSeen, getMessages, newMessageSeen } = require("./controllers/userControllers");
+const { sendMessage, messagesReceived, messagesSeen, getMessages, newMessageSeen, newMessageDelivered } = require("./controllers/userControllers");
 const { login, register } = require("./controllers/authControllers");
 const { getUserInfo, getUsers, getUsersMessages } = require("./controllers/userControllers");
 const { connectToDatabase } = require("./db");
@@ -55,6 +55,10 @@ io.on("connection", (socket) => {
   socket.on('new-message-seen', async (messageId) => {
     await newMessageSeen(io, userSocketMap, messageId);
   });
+
+  socket.on('new-message-delivered', async (messageId) => {
+    await newMessageDelivered(io, userSocketMap, messageId);
+  })
 
   // Handle offer, answer, and ICE candidate events for video call and audio call
   socket.on("offer", (payload) => {

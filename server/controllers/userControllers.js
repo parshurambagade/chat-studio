@@ -100,12 +100,12 @@ module.exports.sendMessage = async (io, userSocketMap, { senderId, receiverId, m
       }
 
       console.log("Inserted Message:", insertedMessage[0]); // Debugging log
-
+      // console.log("userSocketMap: ", userSocketMap);
       const receiverSocketId = userSocketMap[receiverId];
       console.log("receiverSocketId:", receiverSocketId);
       
       if (receiverSocketId) {
-          io.to(receiverSocketId).emit("newMessage for ", insertedMessage[0].receiver_id, " message is ", insertedMessage[0]);
+          io.to(receiverSocketId).emit("newMessage", insertedMessage[0]);
       }
 
       const senderSocketId = userSocketMap[senderId];
@@ -184,5 +184,34 @@ module.exports.newMessageSeen = async (io, userSocketMap, { messageId }) => {
     }
   } catch (error) {
     console.error(`Error updating new message status: ${error.message}`);
+  }
+};
+
+module.exports.newMessageDelivered = async (io, userSocketMap, { messageId }) => {
+  console.log(`New message id: ${messageId}`);
+
+  const query = "UPDATE messages SET status = 'delivered' WHERE id = ? AND status = ?";
+
+  try {
+    const [result] = await pool.query(query, [messageId, 'sent']);
+
+    if (result.affectedRows === 0) {
+      console.error(`No message found with id: ${messageId}`);
+      return;
+    }
+
+    console.log(`Updated new message id ${messageId} status to 'delivered'`);
+
+    // Find the sender id to emit the event
+    const [message] = await pool.query("SELECT sender_id FROM messages WHERE id = ?", [messageId]);
+
+    if (message.length > 0) {
+      const senderSocketId = userSocketMap[message[0].sender_id];
+      if (senderSocketId) {
+        io.to(senderSocketId).emit("new-message-delivered", messageId);
+      }
+    }
+  } catch (error) {
+    console.error(`Error updating new message status to delivered: ${error.message}`);
   }
 };
