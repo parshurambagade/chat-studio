@@ -22,29 +22,37 @@ const ChatRoom = ({ navigation }) => {
   const { socket } = useSocketContext();
   const route = useRoute();
 
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerTitle: "",
-      headerLeft: () => (
-        <View className="flex flex-row justify-between w-full px-4 ">
-          <Pressable
-            onPress={() => navigation.goBack()}
-            className="flex-row items-center"
-          >
-            <Icon name="arrow-back" size={20} color="black" />
-          </Pressable>
-          <View className="">
-            <Text className="text-slate-800">{route?.params?.name}</Text>
-          </View>
-
-          <View className="flex flex-row gap-6 ">
-            <Icon name="call-outline" size={24} color="black" />
-            <Icon name="videocam-outline" size={24} color="black" />
-          </View>
+// Inside ChatRoom component
+useLayoutEffect(() => {
+  navigation.setOptions({
+    headerTitle: "",
+    headerLeft: () => (
+      <View className="flex flex-row justify-between w-full px-4 ">
+        <Pressable
+          onPress={() => navigation.goBack()}
+          className="flex-row items-center"
+        >
+          <Icon name="arrow-back" size={20} color="black" />
+        </Pressable>
+        <View className="">
+          <Text className="text-slate-800">{route?.params?.name}</Text>
         </View>
-      ),
-    });
-  }, [navigation, route?.params?.name]);
+
+        <View className="flex flex-row gap-6 ">
+          <Icon name="call-outline" size={24} color="black" />
+          <Pressable
+            onPress={() => {
+              navigation.navigate("VideoCallScreen", { receiverId: route?.params?.receiverId });
+            }}
+          >
+            <Icon name="videocam-outline" size={24} color="black" />
+          </Pressable>
+        </View>
+      </View>
+    ),
+  });
+}, [navigation, route?.params?.name]);
+
 
   useEffect(() => {
     console.log("Emmiting messages-seen");
@@ -93,36 +101,35 @@ const ChatRoom = ({ navigation }) => {
   useEffect(() => {
     const handleNewMessage = async (newMessage) => {
       console.log("New Message Received:", newMessage, "userid is: ", userId); // Debugging log
-  
+
       if (newMessage.receiver_id == userId) {
         console.log("Emmiting new-message-seen event!");
         await socket.emit("new-message-seen", { messageId: newMessage.id });
       }
-  
+
       setMessages((prevMessages) => {
         // Check if the message already exists
         if (!prevMessages.some((msg) => msg.id === newMessage.id)) {
           const updatedMessages = [...prevMessages, newMessage].sort(
             (a, b) => new Date(a.created_at) - new Date(b.created_at)
           );
-  
+
           return updatedMessages;
         }
         return prevMessages;
       });
     };
-  
+
     if (socket) {
       socket.on("newMessage", handleNewMessage);
     }
-  
+
     return () => {
       if (socket) {
         socket.off("newMessage", handleNewMessage);
       }
     };
   }, [socket, userId]);
-  
 
   useEffect(() => {
     const handleMessagesSeen = (updatedMessages) => {
@@ -150,7 +157,7 @@ const ChatRoom = ({ navigation }) => {
       console.log("Handling new-message-seen event");
       setMessages((prevMessages) =>
         prevMessages.map((msg) =>
-          messageId == (msg.id) ? { ...msg, status: "seen" } : msg
+          messageId == msg.id ? { ...msg, status: "seen" } : msg
         )
       );
     };
@@ -171,11 +178,10 @@ const ChatRoom = ({ navigation }) => {
       console.log("Handling new-message-delivered event");
       setMessages((prevMessages) =>
         prevMessages.map((msg) =>
-          messageId == (msg.id) ? { ...msg, status: "delivered" } : msg
+          messageId == msg.id ? { ...msg, status: "delivered" } : msg
         )
       );
     };
-
 
     if (socket) {
       socket.on("new-message-delivered", handleNewMessageDelivered);

@@ -11,6 +11,7 @@ import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import ChatRoom from "../screens/ChatRoom";
 import VideoCallScreen from "../screens/VideoCallScreen";
+import CallNotificationScreen from "../screens/CallNotificationScreen";
 
 export const StackNavigator = () => {
   const Stack = createStackNavigator();
@@ -109,6 +110,7 @@ export const StackNavigator = () => {
         />
         <Stack.Screen name="ChatRoom" component={ChatRoom} />
         <Stack.Screen name="VideoCallScreen" component={VideoCallScreen} />
+        <Stack.Screen name="CallNotificationScreen" component={CallNotificationScreen} />
       </Stack.Navigator>
     );
   };
@@ -116,6 +118,6 @@ export const StackNavigator = () => {
   return (
     <NavigationContainer>
       {!token.length || !token ? <AuthStack /> : <MainStack />}
-    </NavigationContainer>
+  </NavigationContainer>
   );
 };

@@ -7,20 +7,23 @@ import { AuthContextProvider } from "./context/AuthContext";
 import { UserContextProvider } from "./context/UserContext";
 import { ChatContextProvider } from "./context/ChatContext";
 import { VideoCallContextProvider } from "./context/VideoCallContext";
+import { NavigationContainer } from "@react-navigation/native";
 
 const App = () => {
   return (
+    // <NavigationContainer>
       <AuthContextProvider>
-    <SocketContextProvider>
-        <UserContextProvider>
-          <ChatContextProvider>
-            <VideoCallContextProvider>
-          <StackNavigator />
-          </VideoCallContextProvider>
-          </ChatContextProvider>
-        </UserContextProvider>
-    </SocketContextProvider>
+        <SocketContextProvider>
+          <UserContextProvider>
+            <ChatContextProvider>
+              <VideoCallContextProvider>
+                <StackNavigator />
+              </VideoCallContextProvider>
+            </ChatContextProvider>
+          </UserContextProvider>
+        </SocketContextProvider>
       </AuthContextProvider>
+    /* </NavigationContainer> */
   );
 };
 

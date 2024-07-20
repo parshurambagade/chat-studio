@@ -11,7 +11,7 @@ import {
   SafeAreaView,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { AuthContext, useAuthContext } from "../context/AuthContext.jsx";
+import { AuthContext, useAuthContext } from "../context/AuthContext";
 import { jwtDecode } from "jwt-decode";
 import { useNavigation } from "@react-navigation/native";
 import { API_ENDPOINT } from "@env";

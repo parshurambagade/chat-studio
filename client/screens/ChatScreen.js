@@ -9,12 +9,12 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons.js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import PeopleContainer from "../components/PeopleContainer";
+import PeopleContainer from "../components/PeopleContainer.js";
 import axios from "axios";
 import { API_ENDPOINT } from "@env";
 import { useSocketContext } from "../context/SocketContext.js";
 import { useUserContext } from "../context/UserContext.js";
-import { useAuthContext } from "../context/AuthContext.jsx";
+import { useAuthContext } from "../context/AuthContext.js";
 import { useNavigation } from "@react-navigation/native";
 
 const ChatScreen = () => {
