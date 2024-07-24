@@ -122,7 +122,7 @@ module.exports.sendMessage = async (io, userSocketMap, { senderId, receiverId, m
 
 
 module.exports.messagesReceived = async (io, userSocketMap, { data }) => {
-  console.log(`Messages received: ${JSON.stringify(data)}`);
+  // console.log(`Messages received: ${JSON.stringify(data)}`);
   const sentMessages = data?.filter((message) => message.status == "sent")?.map((message) => message.id);
 
   if (sentMessages?.length === 0) return;

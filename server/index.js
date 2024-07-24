@@ -59,11 +59,25 @@ io.on("connection", (socket) => {
   socket.on('new-message-delivered', async (messageId) => {
     await newMessageDelivered(io, userSocketMap, messageId);
   })
+  //handle call request
+  socket.on("initialise-call", (payload) => {
+    console.log("initialise-call", payload);
+    io.to(userSocketMap[payload.to]).emit("incoming-call", payload);
+  })
 
+  socket.on("call-rejected", ({callerId}) => {
+    console.log("call-rejected", callerId);
+    io.to(userSocketMap[callerId]).emit("call-rejected");
+  })
+
+  socket.on("call-accepted", ({callerId}) => {
+    console.log("call-accepted", callerId);
+    io.to(userSocketMap[callerId]).emit("call-accepted");
+  })
   // Handle offer, answer, and ICE candidate events for video call and audio call
   socket.on("offer", (payload) => {
     console.log("New offer received", payload.sdp);
-    socket.broadcast.emit("offer", payload); // Broadcast to all clients except sender
+    io.to(userSocketMap[payload.receiverId]).emit("offer", payload); 
   });
 
   socket.on("answer", (payload) => {

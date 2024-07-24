@@ -16,7 +16,7 @@ import CallNotificationScreen from "../screens/CallNotificationScreen";
 export const StackNavigator = () => {
   const Stack = createStackNavigator();
   const Tab = createBottomTabNavigator();
-  const { token } = useContext(AuthContext) || { token: "123" };
+  const { token } = useContext(AuthContext) || { token: null };
   const BottomTabs = () => {
     return (
       <Tab.Navigator>
@@ -110,14 +110,13 @@ export const StackNavigator = () => {
         />
         <Stack.Screen name="ChatRoom" component={ChatRoom} />
         <Stack.Screen name="VideoCallScreen" component={VideoCallScreen} />
-        <Stack.Screen name="CallNotificationScreen" component={CallNotificationScreen} />
+        <Stack.Screen
+          name="CallNotificationScreen"
+          component={CallNotificationScreen}
+        />
       </Stack.Navigator>
     );
   };
 
-  return (
-    <NavigationContainer>
-      {!token.length || !token ? <AuthStack /> : <MainStack />}
-  </NavigationContainer>
-  );
+  return !token.length || !token ? <AuthStack /> : <MainStack />;
 };
